@@ -3,7 +3,7 @@ from uuid import uuid4
 from django.contrib.auth.models import User
 
 
-class Accounts(models.Model):
+class Account(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
@@ -24,8 +24,8 @@ class Accounts(models.Model):
 
 class Follows(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    follower_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name='follower_id')
-    following_id = models.ForeignKey(Accounts, on_delete=models.CASCADE, related_name='following_id')
+    follower_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_id', null=True) #temporarily True, in debugging mode
+    following_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_id', null=True)
     start_following_at = models.DateField(auto_now_add=True)
 
     class Meta:
