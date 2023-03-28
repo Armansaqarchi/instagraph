@@ -81,7 +81,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
     'posts.apps.PostsConfig',
-    'rest_framework_simplejwt',
     'rest_framework'
 ]
 
