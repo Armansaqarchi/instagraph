@@ -8,9 +8,7 @@ from rest_framework.response import Response
 
 
 
-class testView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
+class Profile(APIView):
+    permission_classes = (IsAuthenticated)
     def get(self, request) -> Response:
-        return Response({"message" : "this is just a test"})
+        self.check_object_permissions
