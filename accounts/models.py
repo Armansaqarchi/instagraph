@@ -26,7 +26,6 @@ class Story(models.Model):
 
 
 
-
 class Comment(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
