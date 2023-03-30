@@ -1,35 +1,42 @@
 from django.db import models
 from uuid import uuid4
-from django.contrib.auth.models import User
+from accounts.models import Account
 
 
-class Account(models.Model):
+
+class Post(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.EmailField(max_length=50)
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
-    date_of_birth = models.DateField(auto_now_add=True)
-    bio = models.TextField(max_length=500)
-    followers = models.PositiveBigIntegerField(default = 0)
-    following = models.PositiveBigIntegerField(default = 0)
-    posts = models.PositiveBigIntegerField(default = 0)
-    
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    description = models.CharField(max_length=500)
+    likes = models.PositiveBigIntegerField(default = 0)
+    comments = models.PositiveBigIntegerField(default = 0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    location = models.CharField(max_length=50)
+    class Meta:
+        db_table = 'posts'
+
+
+class Like(models.Model):
+    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='posts')
+    like_at = models.DateField(auto_now_add=True)
 
     class Meta:
-        ordering = ['date_of_birth']
-        db_table = 'accounts'
+        db_table = 'likes'
+        ordering = ['like_at']
 
 
 
-class Follows(models.Model):
+
+class Comment(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    follower_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_id', null=True) #temporarily True, in debugging mode
-    following_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_id', null=True)
-    start_following_at = models.DateField(auto_now_add=True)
+    sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    post_id = models.ForeignKey(to = Post, on_delete=models.CASCADE, related_name="comment_post")
+    content = models.CharField(max_length=300)
+    likes_count = models.PositiveBigIntegerField(default = 0)
+    created_at = models.DateField(auto_now_add=True)    
 
     class Meta:
-        db_table = 'follows'
-        ordering = ['start_following_at']
-
+        db_table = 'comments'
 
