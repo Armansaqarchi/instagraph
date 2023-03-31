@@ -5,6 +5,7 @@ from rest_framework.generics import GenericAPIView
 from .models import Account
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
+from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
@@ -23,7 +24,8 @@ from rest_framework.status import(
     HTTP_201_CREATED,
     HTTP_404_NOT_FOUND,
     HTTP_401_UNAUTHORIZED,
-    HTTP_400_BAD_REQUEST
+    HTTP_400_BAD_REQUEST,
+    HTTP_409_CONFLICT
 )
 
 
@@ -110,8 +112,10 @@ class SignUpView(APIView):
         user = UserCreationSerializer(data=request.data)
         try:
             if user.is_valid(raise_exception=True):
-                user.save()
-                return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
+                    user.save()
+                    return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
+                    return Response({"status" : "error", "error" : f"{user['username']} is already taken by another user"}, status=HTTP_409_CONFLICT)
+            
         except ValidationError:
             return Response({"status" : "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
 

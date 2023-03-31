@@ -21,7 +21,7 @@ class AccountSerializer(ModelSerializer):
 
 
 class UserCreationSerializer(Serializer):
-    username = serializers.CharField(source="Firstname")
+    username = serializers.CharField(source="Username")
     email = serializers.EmailField(source="Email")
     password1 = serializers.CharField(source="Password")
     password2 = serializers.CharField(source="Confirm Password")
@@ -29,7 +29,11 @@ class UserCreationSerializer(Serializer):
         
         fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
 
-    def create(**validated_data):
-        User.objects.create(**validated_data)
+    def create(self, **validated_data):
+        User.objects.create(
+            username = validated_data['Username'],
+            email = validated_data['Email'],
+            password = validated_data['Password'],
+        )
         
 
