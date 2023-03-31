@@ -6,9 +6,13 @@ from .models import Account
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django.conf import settings
-from api.serializer import AccountSerializer
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import authenticate, login, logout
+from rest_framework.validators import ValidationError
+from api.serializer import (
+    AccountSerializer,
+    UserCreationSerializer
+)
 from rest_framework.permissions import (
     BasePermission,
     SAFE_METHODS,
@@ -17,7 +21,8 @@ from rest_framework.permissions import (
 from rest_framework.status import(
     HTTP_200_OK,
     HTTP_404_NOT_FOUND,
-    HTTP_401_UNAUTHORIZED
+    HTTP_401_UNAUTHORIZED,
+    HTTP_400_BAD_REQUEST
 )
 
 
@@ -90,4 +95,13 @@ class SignUpView(APIView):
 
     permission_classes = [AllowAny]
 
+
+    def post(self, request) -> Response:
+        user = UserCreationSerializer(request.data)
+        try:
+            if user.is_valid():
+
+
+        except ValidationError:
+            return Response(status=HTTP_400_BAD_REQUEST)
 

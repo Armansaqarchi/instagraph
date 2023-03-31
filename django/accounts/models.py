@@ -18,6 +18,7 @@ class Account(models.Model):
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
     posts = models.PositiveBigIntegerField(default = 0)
+    fr_counts = models.PositiveBigIntegerField(default=0)
     
 
     class Meta:
@@ -29,14 +30,21 @@ class Account(models.Model):
 
 class Follows(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    follower_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_id', null=True) #temporarily True, in debugging mode
-    following_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_id', null=True)
+    follower = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_id', null=True) # temporarily True, in debugging mode
+    following = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_id', null=True)
     start_following_at = models.DateField(auto_now_add=True)
 
     class Meta:
         db_table = 'follows'
         ordering = ['start_following_at']
 
+
+class FollowRQ(models.Model):
+    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True) # temporarily True, in debugging mode
+    recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
+    is_read = models.BooleanField(default=False)
+    accepted = models.CharField(choices=["YES", "NO", "PENDING"], default="PENDING")
 
 
 class Story(models.Model):
