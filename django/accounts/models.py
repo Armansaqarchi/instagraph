@@ -8,10 +8,11 @@ from django.contrib.auth.models import User
 
 class Account(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    username = models.CharField(max_length = 50, null=True, unique=True, editable=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(max_length=50, unique=True)
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
     bio = models.TextField(max_length=500)
     followers = models.PositiveBigIntegerField(default = 0)
