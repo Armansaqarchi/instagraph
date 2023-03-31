@@ -21,13 +21,15 @@ class AccountSerializer(ModelSerializer):
 
 
 class UserCreationSerializer(Serializer):
-    first_name = serializers.CharField(srouce="Firstname")
-    last_name = serializers.CharField(srouce="Lastname")
+    username = serializers.CharField(source="Firstname")
     email = serializers.EmailField(source="Email")
     password1 = serializers.CharField(source="Password")
-    password12 = serializers.CharField(source="Confirm Password")
-    date_of_birth = serializers.DateField(source="Date of birth")
+    password2 = serializers.CharField(source="Confirm Password")
     class Meta:
+        
         fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
+
+    def create(**validated_data):
+        User.objects.create(**validated_data)
         
 

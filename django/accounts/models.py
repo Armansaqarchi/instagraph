@@ -6,6 +6,13 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
+FR_STATUS = (
+    ("True", "YES"),
+    ("False", "NO"),
+    ("pending", "PENDING")
+)
+
+
 class Account(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     username = models.CharField(max_length = 50, null=True, unique=True, editable=True)
@@ -41,10 +48,10 @@ class Follows(models.Model):
 
 class FollowRQ(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True) # temporarily True, in debugging mode
-    recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
+    sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="sent_set") # temporarily True, in debugging mode
+    recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
-    accepted = models.CharField(choices=["YES", "NO", "PENDING"], default="PENDING")
+    accepted = models.CharField(choices=FR_STATUS, default="PENDING", max_length=25)
 
 
 class Story(models.Model):

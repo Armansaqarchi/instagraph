@@ -5,21 +5,22 @@ from rest_framework.generics import GenericAPIView
 from .models import Account
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
+from django.shortcuts import redirect
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
-from api.serializer import (
+from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer
 )
 from rest_framework.permissions import (
-    BasePermission,
     SAFE_METHODS,
     AllowAny
     )
 from rest_framework.status import(
     HTTP_200_OK,
+    HTTP_201_CREATED,
     HTTP_404_NOT_FOUND,
     HTTP_401_UNAUTHORIZED,
     HTTP_400_BAD_REQUEST
@@ -69,12 +70,21 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 
 class LoginView(APIView):
 
+
+    
+
     permission_classes = [AllowAny]
 
 
-    #no method 'get' since it will be handled from client side
+    # no method 'get' since it will be handled from client side
     
     def post(self, request) -> Response:
+
+        # if request.user.is_authenticated:
+        #     return redirect("profile")
+
+
+
         username = request.data["username"]
         password = request.data["password"]
 
@@ -95,13 +105,13 @@ class SignUpView(APIView):
 
     permission_classes = [AllowAny]
 
-
     def post(self, request) -> Response:
-        user = UserCreationSerializer(request.data)
+        
+        user = UserCreationSerializer(data=request.data)
         try:
-            if user.is_valid():
-
-
+            if user.is_valid(raise_exception=True):
+                user.save()
+                return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
         except ValidationError:
-            return Response(status=HTTP_400_BAD_REQUEST)
+            return Response({"status" : "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
 

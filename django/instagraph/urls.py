@@ -33,7 +33,8 @@ token = [
 urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
     re_path(r'^api/', include(token)),
-    re_path(r'test', include('posts.urls'))
+    re_path(r'test', include('posts.urls')),
+    re_path(r'accounts/', include('accounts.urls'))
     
 ]
 
