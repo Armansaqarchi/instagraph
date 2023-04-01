@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from ..models import Account
 from django.contrib.auth.models import User
+from rest_framework.exceptions import APIException
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -29,11 +30,28 @@ class UserCreationSerializer(Serializer):
         
         fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
 
-    def create(self, **validated_data):
-        User.objects.create(
+    def create(self, validated_data):
+
+
+        if  User.objects.filter(username = validated_data['Username']).exists():
+            raise UsernameExistsException
+        elif User.objects.filter(email = validated_data['Email']).exists():
+            raise EmailExistsException
+        
+
+        user = User.objects.create(
             username = validated_data['Username'],
             email = validated_data['Email'],
             password = validated_data['Password'],
         )
+
+        return user
         
 
+
+class EmailExistsException(APIException):
+    pass
+
+
+class UsernameExistsException(APIException):
+    pass

@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,13 +8,15 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
-from django.conf import settings
+from django.db import IntegrityError
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
 from .api.serializer import (
     AccountSerializer,
-    UserCreationSerializer
+    UserCreationSerializer,
+    EmailExistsException,
+    UsernameExistsException
 )
 from rest_framework.permissions import (
     SAFE_METHODS,
@@ -28,6 +31,8 @@ from rest_framework.status import(
     HTTP_409_CONFLICT
 )
 
+
+logger = logging.getLogger(__name__)
 
 
 class SingleProfileView(LoginRequiredMixin, GenericAPIView):
@@ -60,10 +65,12 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
         try:
             account = self.get_object(queryset=query_set)
             is_allowed, message = self.has_object_permission(self, request=request, obj=account)
-            
-            serializer = AccountSerializer(data=request.data)
-            #sending json response containing the Account info, use 'Account' to access it
-            return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
+            if is_allowed:
+                serializer = AccountSerializer(data=request.data)
+                #sending json response containing the Account info, use 'Account' to access it
+                return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
+            else:
+                return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
         except Account.DoesNotExist:
             return Response(status=HTTP_404_NOT_FOUND)
         
@@ -114,8 +121,11 @@ class SignUpView(APIView):
             if user.is_valid(raise_exception=True):
                     user.save()
                     return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
-                    return Response({"status" : "error", "error" : f"{user['username']} is already taken by another user"}, status=HTTP_409_CONFLICT)
             
         except ValidationError:
-            return Response({"status" : "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
+            return Response({"status": "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
+        except EmailExistsException:
+            return Response({"message": "email is already taken, try a different email", "status": "error"}, status=HTTP_409_CONFLICT)
+        except UsernameExistsException:
+            return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
 

@@ -11,10 +11,13 @@ def create_Account(sender, instance, created, **kwargs):
     if created:
 
         user = instance
-        account = account.objects.create(
+        account = Account.objects.create(
             user = user,
             email = user.email,
             username = user.username
         )
+
+
+    return user
 
 
