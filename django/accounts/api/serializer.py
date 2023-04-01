@@ -22,6 +22,8 @@ class AccountSerializer(ModelSerializer):
 
 
 class UserCreationSerializer(Serializer):
+    first_name = serializers.CharField(source="Firstname")
+    last_name = serializers.CharField(source="Lastname")
     username = serializers.CharField(source="Username")
     email = serializers.EmailField(source="Email")
     password1 = serializers.CharField(source="Password")
@@ -43,7 +45,11 @@ class UserCreationSerializer(Serializer):
             username = validated_data['Username'],
             email = validated_data['Email'],
             password = validated_data['Password'],
+            first_name = validated_data["Firstname"],
+            last_name = validated_data["Lastname"]
         )
+
+        
 
         return user
         
