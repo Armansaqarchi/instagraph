@@ -144,7 +144,7 @@ class SignUpView(APIView):
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
 
 
-class Followers(LoginRequiredMixin, ListAPIView):
+class FollowersView(LoginRequiredMixin, ListAPIView):
 
     permission_classes = [IsFollowerPermission]
     serializer_class = FollowerSerializer
