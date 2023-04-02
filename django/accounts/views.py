@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import GenericAPIView
-from .models import Account
+from .models import Account, Follows
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
@@ -12,9 +12,12 @@ from django.db import IntegrityError
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import BasePermission
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
+    FollowerSerializer,
     EmailExistsException,
     UsernameExistsException
 )
@@ -33,6 +36,17 @@ from rest_framework.status import(
 
 
 logger = logging.getLogger(__name__)
+
+
+
+class IsFollowerPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        
+        account_id = request.user.account.id
+        if obj.following_set.filter(follower_set = account_id).exists():
+            return True
+        
+        return False
 
 
 class SingleProfileView(LoginRequiredMixin, GenericAPIView):
@@ -128,4 +142,26 @@ class SignUpView(APIView):
             return Response({"message": "email is already taken, try a different email", "status": "error"}, status=HTTP_409_CONFLICT)
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
+
+
+class Followers(LoginRequiredMixin, ListAPIView):
+
+    permission_classes = [IsFollowerPermission]
+    serializer_class = FollowerSerializer
+    login_url = "accounts/login"
+    paginate_by = 20
+
+    def get_queryset(self):
+        account = Account.objects.get(pk=self.kwargs['pk'])
+        return account.following_set.all()
+
+    def get(self, request) -> Response:
+        try:
+            queryset = self.get_queryset()
+            followers_list = self.get_object()
+            serializer = FollowerSerializer(followers_list, many=True)
+        except Exception:
+            return Response({"status" : "error"}, HTTP_400_BAD_REQUEST)
+        return Response({"followers" : serializer.data}, status=HTTP_200_OK)
+
 

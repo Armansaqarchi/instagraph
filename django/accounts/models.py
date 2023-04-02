@@ -22,6 +22,7 @@ class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
     bio = models.TextField(max_length=500)
+    is_private = models.BooleanField(default=False)
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
     posts = models.PositiveBigIntegerField(default = 0)
@@ -37,8 +38,8 @@ class Account(models.Model):
 
 class Follows(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    follower = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_id', null=True) # temporarily True, in debugging mode
-    following = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_id', null=True)
+    follower = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_set', null=True) # temporarily True, in debugging mode
+    following = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_set', null=True)
     start_following_at = models.DateField(auto_now_add=True)
 
     class Meta:
@@ -64,3 +65,11 @@ class Story(models.Model):
 
     class Meta:
         db_table = 'stories'
+
+
+class Message(models.Model):
+    message_id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    recipient_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    content = models.TextField(max_length=600)
+    sent_at = models.DateTimeField(auto_now_add=True)
