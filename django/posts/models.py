@@ -40,3 +40,24 @@ class Comment(models.Model):
     class Meta:
         db_table = 'comments'
 
+class MediaProfile:
+    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    content_url = models.URLField(max_length=200)
+    set_at = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['set_at']
+        db_table = "media_profile"
+
+
+
+class MediaPost:
+    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
+    content_url = models.URLField(max_length=200)
+    posted_at = models.DateField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['posted_at']
+        db_table = "media_post"
