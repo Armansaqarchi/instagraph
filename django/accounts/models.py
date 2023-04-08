@@ -15,9 +15,6 @@ FR_STATUS = (
 
 class Account(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    username = models.CharField(max_length = 50, null=True, unique=True, editable=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
     email = models.EmailField(max_length=50, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
@@ -34,6 +31,10 @@ class Account(models.Model):
         db_table = 'accounts'
 
 
+    def __str__(self):
+        return self.username
+
+
 
 
 class Follows(models.Model):
@@ -46,6 +47,9 @@ class Follows(models.Model):
         db_table = 'follows'
         ordering = ['start_following_at']
 
+    def __str__(self):
+        return self.follower + "->" + self.following
+
 
 class FollowRQ(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
@@ -53,6 +57,9 @@ class FollowRQ(models.Model):
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
     accepted = models.CharField(choices=FR_STATUS, default="PENDING", max_length=25)
+
+    def __str__(self):
+        return self.sender + "->" + self.recipient
 
 
 class Story(models.Model):
@@ -66,10 +73,17 @@ class Story(models.Model):
     class Meta:
         db_table = 'stories'
 
+    def __Str__(self):
+        return self.user_id.username
+
 
 class Message(models.Model):
     message_id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-    recipient_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    recipient_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="recipient_set")
     content = models.TextField(max_length=600)
     sent_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return self.sender_id.username + " " + self.recipient_id.username

@@ -14,6 +14,7 @@ from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
+from django.contrib.auth.hashers import make_password
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
@@ -103,24 +104,34 @@ class LoginView(APIView):
     
     def post(self, request) -> Response:
 
+
+        
+
         # if request.user.is_authenticated:
         #     return redirect("profile")
+
+
+        
 
 
 
         username = request.data["username"]
         password = request.data["password"]
 
+        
+
         user = authenticate(username = username, password = password)
+
+
 
         if user is not None:
             #give user the token 
             login(request=request, user=user)
             message = "successfully logged in"
-            return Response({"message" : message}, HTTP_200_OK)
+            return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
         else:
             message = "username or password is incorrect"
-            return Response({"message" : message}, HTTP_401_UNAUTHORIZED)
+            return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
 
 
 
