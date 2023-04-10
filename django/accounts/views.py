@@ -59,16 +59,19 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 
     def has_object_permission(self, request, obj):
         if request.method in SAFE_METHODS: #read access
+            logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
             return True, "SAFE"
     
         try:
             if request.user == obj.user:
+                logger.info(f"%s is owner of profile %s : %s-%s".format(request.user.id, obj.id, obj.firstname, obj.lastname))
                 return True, "OWNER"
         
         except FieldDoesNotExist:
             return False, "BAD REQUEST"
         
         return False, "PERMISSION DENIED"
+    
 
     def get_queryset(self, request):
         return Account.objects.filter(kwargs=self.kwargs['pk'])
@@ -83,6 +86,7 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
             if is_allowed:
                 serializer = AccountSerializer(data=request.data)
                 #sending json response containing the Account info, use 'Account' to access it
+                logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.get_attribute("id")))
                 return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
             else:
                 return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
@@ -111,8 +115,6 @@ class LoginView(APIView):
         #     return redirect("profile")
 
 
-        
-
 
 
         username = request.data["username"]
@@ -125,13 +127,18 @@ class LoginView(APIView):
 
 
         if user is not None:
+            logger.info(f"user %s successfully authenticated".format(request.user.id))
             #give user the token 
             login(request=request, user=user)
             message = "successfully logged in"
             return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
         else:
+            logger.info(f"failed to authenticate user %s".format(request.user.id))
             message = "username or password is incorrect"
             return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
+        
+
+        
 
 
 
@@ -145,6 +152,7 @@ class SignUpView(APIView):
         try:
             if user.is_valid(raise_exception=True):
                     user.save()
+                    logger.info(f"a new user signed up : %s".format(request.user.id))
                     return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
         except ValidationError:
@@ -153,6 +161,9 @@ class SignUpView(APIView):
             return Response({"message": "email is already taken, try a different email", "status": "error"}, status=HTTP_409_CONFLICT)
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
+        
+
+
 
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
@@ -174,5 +185,7 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
         except Exception:
             return Response({"status" : "error"}, HTTP_400_BAD_REQUEST)
         return Response({"followers" : serializer.data}, status=HTTP_200_OK)
+    
+    
 
 
