@@ -57,9 +57,14 @@ class FollowRQ(models.Model):
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
     accepted = models.CharField(choices=FR_STATUS, default="PENDING", max_length=25)
+    sent_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.sender + "->" + self.recipient
+    
+    class Meta:
+        db_table = "follow_requests"
+        ordering = ["sent_at"]
 
 
 class Story(models.Model):

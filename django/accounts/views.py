@@ -14,6 +14,7 @@ from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
+from .models import FollowRQ
 from django.contrib.auth.hashers import make_password
 from .api.serializer import (
     AccountSerializer,
@@ -99,8 +100,6 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 class LoginView(APIView):
 
 
-    
-
     permission_classes = [AllowAny]
 
 
@@ -109,12 +108,8 @@ class LoginView(APIView):
     def post(self, request) -> Response:
 
 
-        
-
         # if request.user.is_authenticated:
         #     return redirect("profile")
-
-
 
 
         username = request.data["username"]
@@ -186,6 +181,30 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
             return Response({"status" : "error"}, HTTP_400_BAD_REQUEST)
         return Response({"followers" : serializer.data}, status=HTTP_200_OK)
     
-    
+
+
+class FollowRQ(LoginRequiredMixin, GenericAPIView):
+    login_url = "accounts/login"
+
+    def post(self, request) -> Response:
+        following_id = self.kwargs("following_id")
+        following_user = Account.objects.filter(id = following_id)
+
+        if following_user.is_private:
+            FollowRQ.objects.create(
+                sender = request.user.account.id,
+                recipient = following_id,
+                is_read = False,
+                acceepted = False
+            )
+
+            logger.info("sent friendly request to user : %s".format(following_user.user.username))
+            message = "successfully sent friendly request"
+            return Response({"message" : message, "status" : "success"}, status = HTTP_200_OK)
+        else:
+            message = "strated following %s".format(following_user.user.username)
+            logger.info("user %s started following user %s".format(request.user.id, following_id))
+            return Response({'message' : message, 'status' : "success"}, status = HTTP_200_OK)
+        
 
 
