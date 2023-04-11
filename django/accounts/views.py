@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import GenericAPIView
-from .models import Account
+from .models import Account, Follows
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
@@ -12,9 +12,14 @@ from django.db import IntegrityError
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.validators import ValidationError
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import BasePermission
+from .models import FollowRQ
+from django.contrib.auth.hashers import make_password
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
+    FollowerSerializer,
     EmailExistsException,
     UsernameExistsException
 )
@@ -35,6 +40,17 @@ from rest_framework.status import(
 logger = logging.getLogger(__name__)
 
 
+
+class IsFollowerPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        
+        account_id = request.user.account.id
+        if obj.following_set.filter(follower_set = account_id).exists():
+            return True
+        
+        return False
+
+
 class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 
     model = Account
@@ -44,16 +60,19 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 
     def has_object_permission(self, request, obj):
         if request.method in SAFE_METHODS: #read access
+            logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
             return True, "SAFE"
     
         try:
             if request.user == obj.user:
+                logger.info(f"%s is owner of profile %s : %s-%s".format(request.user.id, obj.id, obj.firstname, obj.lastname))
                 return True, "OWNER"
         
         except FieldDoesNotExist:
             return False, "BAD REQUEST"
         
         return False, "PERMISSION DENIED"
+    
 
     def get_queryset(self, request):
         return Account.objects.filter(kwargs=self.kwargs['pk'])
@@ -68,6 +87,7 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
             if is_allowed:
                 serializer = AccountSerializer(data=request.data)
                 #sending json response containing the Account info, use 'Account' to access it
+                logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.get_attribute("id")))
                 return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
             else:
                 return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
@@ -80,8 +100,6 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
 class LoginView(APIView):
 
 
-    
-
     permission_classes = [AllowAny]
 
 
@@ -89,24 +107,33 @@ class LoginView(APIView):
     
     def post(self, request) -> Response:
 
+
         # if request.user.is_authenticated:
         #     return redirect("profile")
-
 
 
         username = request.data["username"]
         password = request.data["password"]
 
+        
+
         user = authenticate(username = username, password = password)
 
+
+
         if user is not None:
+            logger.info(f"user %s successfully authenticated".format(request.user.id))
             #give user the token 
             login(request=request, user=user)
             message = "successfully logged in"
-            return Response({"message" : message}, HTTP_200_OK)
+            return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
         else:
+            logger.info(f"failed to authenticate user %s".format(request.user.id))
             message = "username or password is incorrect"
-            return Response({"message" : message}, HTTP_401_UNAUTHORIZED)
+            return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
+        
+
+        
 
 
 
@@ -120,6 +147,7 @@ class SignUpView(APIView):
         try:
             if user.is_valid(raise_exception=True):
                     user.save()
+                    logger.info(f"a new user signed up : %s".format(request.user.id))
                     return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
         except ValidationError:
@@ -128,4 +156,55 @@ class SignUpView(APIView):
             return Response({"message": "email is already taken, try a different email", "status": "error"}, status=HTTP_409_CONFLICT)
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
+        
+
+
+
+
+class FollowersView(LoginRequiredMixin, ListAPIView):
+
+    permission_classes = [IsFollowerPermission]
+    serializer_class = FollowerSerializer
+    login_url = "accounts/login"
+    paginate_by = 20
+
+    def get_queryset(self):
+        account = Account.objects.get(pk=self.kwargs['pk'])
+        return account.following_set.all()
+
+    def get(self, request) -> Response:
+        try:
+            queryset = self.get_queryset()
+            followers_list = self.get_object()
+            serializer = FollowerSerializer(followers_list, many=True)
+        except Exception:
+            return Response({"status" : "error"}, HTTP_400_BAD_REQUEST)
+        return Response({"followers" : serializer.data}, status=HTTP_200_OK)
+    
+
+
+class FollowRQ(LoginRequiredMixin, GenericAPIView):
+    login_url = "accounts/login"
+
+    def post(self, request) -> Response:
+        following_id = self.kwargs("following_id")
+        following_user = Account.objects.filter(id = following_id)
+
+        if following_user.is_private:
+            FollowRQ.objects.create(
+                sender = request.user.account.id,
+                recipient = following_id,
+                is_read = False,
+                acceepted = False
+            )
+
+            logger.info("sent friendly request to user : %s".format(following_user.user.username))
+            message = "successfully sent friendly request"
+            return Response({"message" : message, "status" : "success"}, status = HTTP_200_OK)
+        else:
+            message = "strated following %s".format(following_user.user.username)
+            logger.info("user %s started following user %s".format(request.user.id, following_id))
+            return Response({'message' : message, 'status' : "success"}, status = HTTP_200_OK)
+        
+
 

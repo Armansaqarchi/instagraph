@@ -121,6 +121,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'instagraph.wsgi.application'
 
 
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -154,9 +162,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-PASSWORD_HASHES = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-]
+
 
 
 REST_FRAMEWORK = {
@@ -165,7 +171,9 @@ REST_FRAMEWORK = {
         'django.contrib.auth.backends.ModelBackend'
     )
 }
-    
+
+
+
 
 
 # Internationalization
