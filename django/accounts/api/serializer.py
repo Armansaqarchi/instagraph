@@ -11,7 +11,6 @@ from ..models import (
     Follows
 )
 
-
 class AccountSerializer(ModelSerializer):
     first_name = serializers.CharField(source="Firstname")
     last_name = serializers.CharField(source="Lastname")
@@ -44,8 +43,6 @@ class UserCreationSerializer(Serializer):
         elif User.objects.filter(email = validated_data['Email']).exists():
             raise EmailExistsException
         
-
-
         password = make_password(validated_data["Password"])
 
         user = User.objects.create(
@@ -56,14 +53,7 @@ class UserCreationSerializer(Serializer):
             last_name = validated_data["Lastname"]
         )
 
-        
-        
-
         user.save()
-
-        
-
-        
 
         return user
     
@@ -86,7 +76,6 @@ class FollowerSerializer(Serializer):
 
         return follows       
         
-
 
 class EmailExistsException(APIException):
     pass

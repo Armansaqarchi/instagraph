@@ -10,12 +10,16 @@ from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.db import IntegrityError
 from django.core.exceptions import FieldDoesNotExist
-from django.contrib.auth import authenticate, login, logout
+from django.utils.http import url_has_allowed_host_and_scheme as is_url_safe
+from django.contrib.auth import authenticate, login, logout, REDIRECT_FIELD_NAME
 from rest_framework.validators import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.csrf import csrf_protect
 from .models import FollowRQ
 from django.contrib.auth.hashers import make_password
+from django.conf import settings
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
@@ -49,6 +53,15 @@ class IsFollowerPermission(BasePermission):
             return True
         
         return False
+    
+
+class NotAuthenticatedView(APIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        if request.user.is_authenticated:
+            return redirect("home")
+        
+        return super().dispatch(request, *args, **kwargs)
 
 
 class SingleProfileView(LoginRequiredMixin, GenericAPIView):
@@ -57,6 +70,8 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
     login_url = "accounts/login"
     renderer_classes = [JSONRenderer]
 
+
+    
 
     def has_object_permission(self, request, obj):
         if request.method in SAFE_METHODS: #read access
@@ -97,7 +112,18 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
     
         
 
-class LoginView(APIView):
+class LoginView(NotAuthenticatedView):
+
+    """
+    this overrides dispatch function which is in charge to handle where the response should go
+    but since passowrd would better not shown in logs, it would better to treat as sensitive arg
+    """
+
+
+    @sensitive_post_parameters('password')
+    @csrf_protect
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
 
 
     permission_classes = [AllowAny]
@@ -111,22 +137,31 @@ class LoginView(APIView):
         # if request.user.is_authenticated:
         #     return redirect("profile")
 
-
         username = request.data["username"]
         password = request.data["password"]
 
-        
-
         user = authenticate(username = username, password = password)
-
-
 
         if user is not None:
             logger.info(f"user %s successfully authenticated".format(request.user.id))
             #give user the token 
             login(request=request, user=user)
             message = "successfully logged in"
-            return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
+
+            # there might be a redirect url which user redirect to when login is done
+            # this url first needs to be checked to see if allowed to serve as a host
+
+            redirect_to = request.POST.get(REDIRECT_FIELD_NAME)
+            if redirect_to is not None:
+                url_is_safe = is_url_safe(url=redirect_to, allowed_hosts=request.get_host(), require_https=request.is_secure())
+                if not url_is_safe:
+                    redirect_to = settings.REDIRECT_LOGIN_URL
+            else:
+                redirect_to = settings.REDIRECT_LOGIN_URL
+                url_is_safe = True
+
+
+            return Response({"message" : message, "status" : "success", "redirect" : redirect_to, "url_is_safe" : url_is_safe}, HTTP_200_OK)
         else:
             logger.info(f"failed to authenticate user %s".format(request.user.id))
             message = "username or password is incorrect"
@@ -157,8 +192,6 @@ class SignUpView(APIView):
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
         
-
-
 
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
@@ -197,6 +230,7 @@ class FollowRQ(LoginRequiredMixin, GenericAPIView):
                 is_read = False,
                 acceepted = False
             )
+            
 
             logger.info("sent friendly request to user : %s".format(following_user.user.username))
             message = "successfully sent friendly request"
