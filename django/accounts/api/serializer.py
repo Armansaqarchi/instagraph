@@ -1,10 +1,14 @@
 from rest_framework import serializers
-from ..models import Account
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import APIException
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
+)
+from ..models import (
+    Account,
+    Follows
 )
 
 
@@ -41,17 +45,46 @@ class UserCreationSerializer(Serializer):
             raise EmailExistsException
         
 
+
+        password = make_password(validated_data["Password"])
+
         user = User.objects.create(
             username = validated_data['Username'],
             email = validated_data['Email'],
-            password = validated_data['Password'],
+            password = password,
             first_name = validated_data["Firstname"],
             last_name = validated_data["Lastname"]
         )
 
         
+        
+
+        user.save()
+
+        
+
+        
 
         return user
+    
+
+
+class FollowerSerializer(Serializer):
+    follows_id = serializers.IntegerField(source="follows_id")
+    follower = serializers.CharField(source="follower")
+    following = serializers.CharField(source="following")
+    is_private = serializers.BooleanField(source="is_private")
+    class Meta:
+        fields = ["follows_id", "follower", "following", "is_private"]
+
+
+    def create(self, validated_data):
+        follows = Follows.objects.create(
+            follower = validated_data["follower"],
+            following = validated_data["following"]
+        )
+
+        return follows       
         
 
 
