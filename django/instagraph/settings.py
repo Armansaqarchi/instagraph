@@ -195,6 +195,8 @@ STATIC_URL = 'static/'
 
 LOGIN_URL = '/accounts/login'
 
+LOGIN_REDIRECT_URL = '/home'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
