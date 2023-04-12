@@ -152,7 +152,7 @@ class LoginView(NotAuthenticatedView):
             # this url first needs to be checked to see if allowed to serve as a host
 
 
-            redirect_to = request.POST.get(REDIRECT_FIELD_NAME)
+            redirect_to = request.data.get(REDIRECT_FIELD_NAME)
 
             if settings.CHECK_URLS:
                 if redirect_to is not None:
@@ -188,14 +188,18 @@ class SignUpView(APIView):
         user = UserCreationSerializer(data=request.data)
         try:
             if user.is_valid(raise_exception=True):
-                activation = Activation()
-                activation.code = digit_random6()
-                activation.email = user.validated_data['Email']
-
-
-                user.save()
-                logger.info(f"a new user signed up : %s".format(request.user.id))
-                return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
+                if settings.ENABLE_USER_ACTIVATION:
+                
+                    Activation.objects.create(
+                        code = digit_random6(),
+                        email = user.validated_data['Email']
+                    )
+                    return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
+                                      "status" : "success"}, status=HTTP_200_OK)
+                else:
+                    user.save()
+                    logger.info(f"a new user signed up : %s".format(request.user.id))
+                    return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
         except ValidationError:
             return Response({"status": "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
@@ -204,6 +208,14 @@ class SignUpView(APIView):
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
         
+
+class Activate(APIView):
+    
+    def post(self, request):
+        code = request.data["verification_code"]
+
+
+
 
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
@@ -219,7 +231,6 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
     def get(self, request) -> Response:
         try:
-            queryset = self.get_queryset()
             followers_list = self.get_object()
             serializer = FollowerSerializer(followers_list, many=True)
         except Exception:

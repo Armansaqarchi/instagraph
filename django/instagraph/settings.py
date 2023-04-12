@@ -189,6 +189,8 @@ USE_TZ = True
 
 CHECK_URLS = True
 
+ENABLE_USER_ACTIVATION = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
