@@ -3,23 +3,22 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import GenericAPIView
-from .models import Account, Follows
+from .models import Account
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
-from django.contrib.auth.models import User
 from django.shortcuts import redirect
-from django.db import IntegrityError
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.http import url_has_allowed_host_and_scheme as is_url_safe
 from django.contrib.auth import authenticate, login, logout, REDIRECT_FIELD_NAME
-from rest_framework.validators import ValidationError
+from django.core.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import BasePermission
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.csrf import csrf_protect
-from .models import FollowRQ
-from django.contrib.auth.hashers import make_password
+from .models import FollowRQ, Activation
+from random import randint
 from django.conf import settings
+from .utils import digit_random6
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
@@ -42,6 +41,8 @@ from rest_framework.status import(
 
 
 logger = logging.getLogger(__name__)
+
+
 
 
 
@@ -133,7 +134,6 @@ class LoginView(NotAuthenticatedView):
     
     def post(self, request) -> Response:
 
-
         # if request.user.is_authenticated:
         #     return redirect("profile")
 
@@ -151,15 +151,19 @@ class LoginView(NotAuthenticatedView):
             # there might be a redirect url which user redirect to when login is done
             # this url first needs to be checked to see if allowed to serve as a host
 
-            redirect_to = request.POST.get(REDIRECT_FIELD_NAME)
-            if redirect_to is not None:
-                url_is_safe = is_url_safe(url=redirect_to, allowed_hosts=request.get_host(), require_https=request.is_secure())
-                if not url_is_safe:
-                    redirect_to = settings.REDIRECT_LOGIN_URL
-            else:
-                redirect_to = settings.REDIRECT_LOGIN_URL
-                url_is_safe = True
 
+            redirect_to = request.POST.get(REDIRECT_FIELD_NAME)
+
+            if settings.CHECK_URLS:
+                if redirect_to is not None:
+                    url_is_safe = is_url_safe(url=redirect_to, allowed_hosts=request.get_host(), require_https=request.is_secure())
+                    if not url_is_safe:
+                        redirect_to = settings.REDIRECT_LOGIN_URL
+                else:
+                    redirect_to = settings.REDIRECT_LOGIN_URL
+                    url_is_safe = True
+            
+            else: url_is_safe = None
 
             return Response({"message" : message, "status" : "success", "redirect" : redirect_to, "url_is_safe" : url_is_safe}, HTTP_200_OK)
         else:
@@ -176,14 +180,22 @@ class SignUpView(APIView):
 
     permission_classes = [AllowAny]
 
+
+
+
     def post(self, request) -> Response:
         
         user = UserCreationSerializer(data=request.data)
         try:
             if user.is_valid(raise_exception=True):
-                    user.save()
-                    logger.info(f"a new user signed up : %s".format(request.user.id))
-                    return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
+                activation = Activation()
+                activation.code = digit_random6()
+                activation.email = user.validated_data['Email']
+
+
+                user.save()
+                logger.info(f"a new user signed up : %s".format(request.user.id))
+                return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
         except ValidationError:
             return Response({"status": "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)

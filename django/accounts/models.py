@@ -36,8 +36,6 @@ class Account(models.Model):
     
 
 
-    def save()
-
 
 
 
@@ -96,3 +94,16 @@ class Message(models.Model):
 
     def __str__(self):
         return self.sender_id.username + " " + self.recipient_id.username
+    
+
+
+class Activation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    email = models.EmailField(blank=True)
+    code = models.CharField(max_length=50, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        db_table = True
+        ordering = ['created_at']
