@@ -21,7 +21,9 @@ class AccountSerializer(ModelSerializer):
     class Meta:
         model = Account
         fields = ["first_name", "last_name", "email", "date_of_birth", "bio"]
-        
+        constraints = [
+            
+        ]
 
 
 class UserCreationSerializer(Serializer):
