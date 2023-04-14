@@ -18,7 +18,8 @@ from django.views.decorators.csrf import csrf_protect
 from .models import FollowRQ, Activation
 from random import randint
 from django.conf import settings
-from .utils import digit_random6
+from django.db import transaction
+from .utils import digit_random6, signup_verification
 from .api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
@@ -188,6 +189,10 @@ class SignUpView(APIView):
         user = UserCreationSerializer(data=request.data)
         try:
             if user.is_valid(raise_exception=True):
+
+                user.save()
+
+
                 if settings.ENABLE_USER_ACTIVATION:
                 
                     Activation.objects.create(
@@ -209,12 +214,21 @@ class SignUpView(APIView):
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
         
 
+
 class Activate(APIView):
     
-    def post(self, request):
+
+    def post(self, request, code):
+
         code = request.data["verification_code"]
-
-
+        email = request.data["email"]
+        act = Activation.objects.filter(code = code, email = email).first()
+        if act:
+            user = act
+            authenticate(username = user.username, password = user.password)
+            login(request=request, user=user)
+            return Response({"message" : "logged in successfully", "status" : "success"}, status=HTTP_200_OK)
+        return Response({"message" : "failed to varify code", "status" : "error"}, status=HTTP_401_UNAUTHORIZED)
 
 
 

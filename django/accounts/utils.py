@@ -4,6 +4,7 @@ from django.http import HttpResponse
 
 
 
+
 def digit_random6(self) -> str:
     '''Generate a random 6 digit string'''
 
