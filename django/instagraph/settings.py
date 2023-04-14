@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -86,7 +87,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
     'posts.apps.PostsConfig',
-    'rest_framework'
+    'rest_framework',
+    'django_crontab'
 ]
 
 MIDDLEWARE = [
@@ -120,6 +122,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'instagraph.wsgi.application'
 
+MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
+
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
@@ -127,6 +131,10 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
+CRON_CLASSES = [
+    "accounts.crons.ActivationCronJob",
 ]
 
 # Database
@@ -142,6 +150,10 @@ DATABASES = {
         "NAME" : "postgres"
     }
 }
+
+CRONJOBS = [
+     ('*/2 * * * *', 'accounts.crons.activation_cron_job', '>> /home/mahan/Desktop/instagraph/cron.log')
+]
 
 
 # Password validation

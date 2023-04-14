@@ -14,7 +14,7 @@ FR_STATUS = (
 
 
 class Account(models.Model):
-    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     email = models.EmailField(max_length=50, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
@@ -40,7 +40,7 @@ class Account(models.Model):
 
 
 class Follows(models.Model):
-    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     follower = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='follower_set', null=True) # temporarily True, in debugging mode
     following = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='following_set', null=True)
     start_following_at = models.DateField(auto_now_add=True)
@@ -54,7 +54,7 @@ class Follows(models.Model):
 
 
 class FollowRQ(models.Model):
-    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="sent_set") # temporarily True, in debugging mode
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
@@ -70,7 +70,7 @@ class FollowRQ(models.Model):
 
 
 class Story(models.Model):
-    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE) 
     content_url = models.URLField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -85,7 +85,7 @@ class Story(models.Model):
 
 
 class Message(models.Model):
-    message_id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
     recipient_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="recipient_set")
     content = models.TextField(max_length=600)
@@ -104,5 +104,5 @@ class Activation(models.Model):
 
 
     class Meta:
-        db_table = True
+        db_table = "Activation"
         ordering = ['created_at']
