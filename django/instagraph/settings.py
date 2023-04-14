@@ -152,7 +152,7 @@ DATABASES = {
 }
 
 CRONJOBS = [
-     ('*/2 * * * *', 'accounts.crons.activation_cron_job', '>> /home/mahan/Desktop/instagraph/cron.log')
+     ('*/1 * * * *', 'accounts.crons.activation_cron_job')
 ]
 
 
