@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -86,7 +87,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
     'posts.apps.PostsConfig',
-    'rest_framework'
+    'rest_framework',
+    'django_crontab'
 ]
 
 MIDDLEWARE = [
@@ -120,6 +122,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'instagraph.wsgi.application'
 
+MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
+
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
@@ -127,6 +131,10 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
+CRON_CLASSES = [
+    "accounts.crons.ActivationCronJob",
 ]
 
 # Database
@@ -142,6 +150,10 @@ DATABASES = {
         "NAME" : "postgres"
     }
 }
+
+CRONJOBS = [
+     ('*/1 * * * *', 'accounts.crons.activation_cron_job')
+]
 
 
 # Password validation
@@ -164,6 +176,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
+LOGGING = {
+    'version': 1,                       
+    'disable_existing_loggers': False,
+    'handlers' : {
+        "file" : {
+            "class" : "logging.FileHandler",
+            "filename" : "django.log",
+            "level" : "INFO"
+        }
+    }
+}
+
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -172,7 +197,11 @@ REST_FRAMEWORK = {
     )
 }
 
-
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'arman.saghari81@gmail.com'
+EMAIL_HOST_PASSWORD = 'password'
 
 
 
@@ -186,6 +215,10 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+CHECK_URLS = True
+
+ENABLE_USER_ACTIVATION = False
 
 
 # Static files (CSS, JavaScript, Images)
