@@ -16,6 +16,8 @@ from rest_framework.permissions import BasePermission
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.csrf import csrf_protect
 from .models import FollowRQ, Activation
+from django.utils.decorators import method_decorator
+from django.http import Http404
 from random import randint
 from django.conf import settings
 from django.db import transaction
@@ -72,15 +74,15 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
     login_url = "accounts/login"
     renderer_classes = [JSONRenderer]
 
-
     
 
     def has_object_permission(self, request, obj):
-        if request.method in SAFE_METHODS: #read access
+        
+        if request.method in SAFE_METHODS: # read access
             logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
             return True, "SAFE"
     
-        try:
+        try: 
             if request.user == obj.user:
                 logger.info(f"%s is owner of profile %s : %s-%s".format(request.user.id, obj.id, obj.firstname, obj.lastname))
                 return True, "OWNER"
@@ -91,27 +93,32 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
         return False, "PERMISSION DENIED"
     
 
-    def get_queryset(self, request):
-        return Account.objects.filter(kwargs=self.kwargs['pk'])
+    def get_queryset(self):
+        return Account.objects.filter(id = self.kwargs.get("pk"))
+        
     
-    
-    def get(self, request) -> Response:
-        query_set = self.get_queryset()
+    def get(self, request, pk) -> Response:
+        
+        self.kwargs["pk"] = pk
+
+        
 
         try:
-            account = self.get_object(queryset=query_set)
-            is_allowed, message = self.has_object_permission(self, request=request, obj=account)
+            account = self.get_object()
+            
+            is_allowed, message = self.has_object_permission(request, obj=account)
             if is_allowed:
-                serializer = AccountSerializer(data=request.data)
+                
+                serializer = AccountSerializer(account)
                 #sending json response containing the Account info, use 'Account' to access it
                 logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.get_attribute("id")))
                 return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
             else:
                 return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
         except Account.DoesNotExist:
-            return Response(status=HTTP_404_NOT_FOUND)
-        
-    
+            return Response({"message" : "page not found"}, status=HTTP_404_NOT_FOUND)
+        except Http404:
+            return Response({"message" : f"no user id {pk} found", "status" : "error"}, HTTP_404_NOT_FOUND)
         
 
 class LoginView(NotAuthenticatedView):
@@ -122,8 +129,7 @@ class LoginView(NotAuthenticatedView):
     """
 
 
-    @sensitive_post_parameters('password')
-    @csrf_protect
+    @method_decorator(sensitive_post_parameters('password'))
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
@@ -153,15 +159,15 @@ class LoginView(NotAuthenticatedView):
             # this url first needs to be checked to see if allowed to serve as a host
 
 
-            redirect_to = request.data.get(REDIRECT_FIELD_NAME)
+            redirect_to = request.META.get("next")
 
             if settings.CHECK_URLS:
                 if redirect_to is not None:
                     url_is_safe = is_url_safe(url=redirect_to, allowed_hosts=request.get_host(), require_https=request.is_secure())
                     if not url_is_safe:
-                        redirect_to = settings.REDIRECT_LOGIN_URL
+                        redirect_to = settings.LOGIN_REDIRECT_URL
                 else:
-                    redirect_to = settings.REDIRECT_LOGIN_URL
+                    redirect_to = settings.LOGIN_REDIRECT_URL
                     url_is_safe = True
             
             else: url_is_safe = None
@@ -192,7 +198,7 @@ class SignUpView(APIView):
 
                 instance = user.save()
 
-
+                # this feature is temporarily false due to problem with sending email
                 if settings.ENABLE_USER_ACTIVATION:
                 
                     
@@ -205,7 +211,6 @@ class SignUpView(APIView):
                     return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
                                       "status" : "success"}, status=HTTP_200_OK)
                 else:
-                    user.save()
                     logger.info(f"a new user signed up : %s".format(request.user.id))
                     return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
@@ -219,7 +224,6 @@ class SignUpView(APIView):
 
 
 class Activate(APIView):
-    
 
     def post(self, request, code):
 
@@ -228,6 +232,9 @@ class Activate(APIView):
         act = Activation.objects.filter(code = code, email = email).first()
         if act:
             user = act.user
+            user.is_active = True
+            user.save()
+
             act.delete()
             authenticate(username = user.username, password = user.password)
             login(request=request, user=user)

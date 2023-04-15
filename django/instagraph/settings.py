@@ -176,6 +176,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
+LOGGING = {
+    'version': 1,                       
+    'disable_existing_loggers': False,
+    'handlers' : {
+        "file" : {
+            "class" : "logging.FileHandler",
+            "filename" : "django.log",
+            "level" : "INFO"
+        }
+    }
+}
+
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -184,7 +197,11 @@ REST_FRAMEWORK = {
     )
 }
 
-
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'arman.saghari81@gmail.com'
+EMAIL_HOST_PASSWORD = 'password'
 
 
 
@@ -201,7 +218,7 @@ USE_TZ = True
 
 CHECK_URLS = True
 
-ENABLE_USER_ACTIVATION = True
+ENABLE_USER_ACTIVATION = False
 
 
 # Static files (CSS, JavaScript, Images)
