@@ -190,15 +190,18 @@ class SignUpView(APIView):
         try:
             if user.is_valid(raise_exception=True):
 
-                user.save()
+                instance = user.save()
 
 
                 if settings.ENABLE_USER_ACTIVATION:
                 
-                    Activation.objects.create(
+                    
+                    act = Activation.objects.create(
+                        user = instance,
                         code = digit_random6(),
                         email = user.validated_data['Email']
                     )
+                    signup_verification(subject = "verification", message =  "message", email = act.email)
                     return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
                                       "status" : "success"}, status=HTTP_200_OK)
                 else:
@@ -224,7 +227,8 @@ class Activate(APIView):
         email = request.data["email"]
         act = Activation.objects.filter(code = code, email = email).first()
         if act:
-            user = act
+            user = act.user
+            act.delete()
             authenticate(username = user.username, password = user.password)
             login(request=request, user=user)
             return Response({"message" : "logged in successfully", "status" : "success"}, status=HTTP_200_OK)

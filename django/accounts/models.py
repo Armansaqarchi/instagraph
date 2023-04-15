@@ -98,6 +98,7 @@ class Message(models.Model):
 
 
 class Activation(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     email = models.EmailField(blank=True)
     code = models.CharField(max_length=50, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
