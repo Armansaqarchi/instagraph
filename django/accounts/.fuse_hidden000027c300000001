@@ -1,0 +1,25 @@
+from django.core import mail
+
+connection = mail.get_connection()
+
+# Manually open the connection
+connection.open()
+
+# Construct an email message that uses the connection
+
+
+
+# Construct two more messages
+email2 = mail.EmailMessage(
+    "Hello",
+    "Body goes here",
+    "arman.saghari81@gmail.com",
+    ["arman.saqarchi@gmail.com"],
+)
+
+
+# Send the two emails in a single call -
+connection.send_messages([email2])
+# The connection was already open so send_messages() doesn't close it.
+# We need to manually close the connection.
+connection.close()
