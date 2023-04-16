@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import APIException
 from rest_framework.validators import ValidationError
+from collections import OrderedDict
+from rest_framework.fields import SkipField
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -23,10 +25,42 @@ class AccountSerializer(ModelSerializer):
         model = Account
         fields = ["first_name", "last_name", "email", "date_of_birth", "bio"]
 
+    def to_representation(self, instance):
+        """
+        Object instance -> Dict of primitive datatypes.
+        """
+
+        ret["firstname"] = instance.user.first_name
+        ret["lastname"] = instance.user.last_name
+
+
+        ret = OrderedDict()
+        fields = self._readable_fields
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(instance)
+            except SkipField:
+                continue
+            # this function is the same as parent function but raises AttrbuteError when firstname and lastname is not found
+            except AttributeError:
+                continue
+
+            if attribute is None:
+                ret[field.field_name] = None
+            else:
+                ret[field.field_name] = field.to_representation(attribute)
+
+
+        
+
+        return ret
+        
+
 
 
 class UserCreationSerializer(Serializer):
-    first_name = serializers.SerializerMethodField()
+    first_name = serializers.SerializerMethodField(required = False)
     last_name = serializers.SerializerMethodField()
     username = serializers.CharField()
     email = serializers.EmailField()
