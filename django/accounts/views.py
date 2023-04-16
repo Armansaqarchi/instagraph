@@ -39,7 +39,8 @@ from rest_framework.status import(
     HTTP_404_NOT_FOUND,
     HTTP_401_UNAUTHORIZED,
     HTTP_400_BAD_REQUEST,
-    HTTP_409_CONFLICT
+    HTTP_409_CONFLICT,
+    HTTP_208_ALREADY_REPORTED
 )
 
 
@@ -267,9 +268,14 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 class FollowRQ(LoginRequiredMixin, GenericAPIView):
     login_url = "accounts/login"
 
-    def post(self, request) -> Response:
-        following_id = self.kwargs("following_id")
+    def post(self, request, following_id) -> Response:
         following_user = Account.objects.filter(id = following_id)
+
+        is_following = following_id.received_set.filter(sender = request.user.account.id)
+
+        if is_following:
+            message = f"user {following_user.id} is already being followed"
+            return Response({"message" : message, "status" : "error"}, status=HTTP_208_ALREADY_REPORTED)
 
         if following_user.is_private:
             FollowRQ.objects.create(
