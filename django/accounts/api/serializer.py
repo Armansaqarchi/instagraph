@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import APIException
+from rest_framework.validators import ValidationError
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -12,11 +13,11 @@ from ..models import (
 )
 
 class AccountSerializer(ModelSerializer):
-    first_name = serializers.CharField(source="Firstname")
-    last_name = serializers.CharField(source="Lastname")
-    email = serializers.EmailField(source="Email")
-    date_of_birth = serializers.DateField(source="Date of birth")
-    bio = serializers.CharField(style={'base_template': 'textarea.html'}, source="Bio")
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField()
+    date_of_birth = serializers.DateField()
+    bio = serializers.CharField(style={'base_template': 'textarea.html'})
 
     class Meta:
         model = Account
@@ -25,37 +26,47 @@ class AccountSerializer(ModelSerializer):
 
 
 class UserCreationSerializer(Serializer):
-    first_name = serializers.CharField(source="Firstname")
-    last_name = serializers.CharField(source="Lastname")
-    username = serializers.CharField(source="Username")
-    email = serializers.EmailField(source="Email")
-    password1 = serializers.CharField(source="Password")
-    password2 = serializers.CharField(source="Confirm Password")
+    first_name = serializers.SerializerMethodField()
+    last_name = serializers.SerializerMethodField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    password1 = serializers.CharField()
+    password2 = serializers.CharField()
     class Meta:
         
         fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
 
+    def validate(self, attrs):
+
+        if  User.objects.filter(username = attrs['username']).exists():
+            raise UsernameExistsException(f"username {attrs['username']} already exists")
+        elif User.objects.filter(email = attrs['email']).exists():
+            raise EmailExistsException(f"email {attrs['email']} already exists")
+
+        return super().validate(attrs)
+
     def create(self, validated_data):
 
-
-        if  User.objects.filter(username = validated_data['Username']).exists():
-            raise UsernameExistsException
-        elif User.objects.filter(email = validated_data['Email']).exists():
-            raise EmailExistsException
-        
-        password = make_password(validated_data["Password"])
+        password = make_password(validated_data["password1"])
 
         user = User.objects.create(
-            username = validated_data['Username'],
-            email = validated_data['Email'],
+            username = validated_data['username'],
+            email = validated_data['email'],
             password = password,
-            first_name = validated_data["Firstname"],
-            last_name = validated_data["Lastname"]
+            first_name = validated_data["first_name"],
+            last_name = validated_data["last_name"]
         )
 
         user.save()
 
         return user
+
+    def get_first_name(self, obj):
+        return obj.user.first_name
+    
+    def get_last_name(self, obj):
+        return obj.user.last_name
+
     
 
 
@@ -77,9 +88,9 @@ class FollowerSerializer(Serializer):
         return follows       
         
 
-class EmailExistsException(APIException):
+class EmailExistsException(ValidationError):
     pass
 
 
-class UsernameExistsException(APIException):
+class UsernameExistsException(ValidationError):
     pass
