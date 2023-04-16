@@ -111,8 +111,8 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
                 
                 serializer = AccountSerializer(account)
                 #sending json response containing the Account info, use 'Account' to access it
-                logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.get_attribute("id")))
-                return Response({"Account" : serializer, "Message" : message}, status=HTTP_200_OK)
+                # logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.data.get("username")))
+                return Response({"Account" : serializer.data, "Message" : message}, status=HTTP_200_OK)
             else:
                 return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
         except Account.DoesNotExist:
@@ -205,7 +205,7 @@ class SignUpView(APIView):
                     act = Activation.objects.create(
                         user = instance,
                         code = digit_random6(),
-                        email = user.validated_data['Email']
+                        email = user.validated_data['email']
                     )
                     signup_verification(subject = "verification", message =  "message", email = act.email)
                     return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
