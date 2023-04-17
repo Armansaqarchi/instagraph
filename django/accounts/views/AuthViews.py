@@ -34,7 +34,6 @@ from rest_framework.status import(
     HTTP_401_UNAUTHORIZED,
     HTTP_400_BAD_REQUEST,
     HTTP_409_CONFLICT,
-    HTTP_208_ALREADY_REPORTED
 )
 
 
@@ -42,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class NotAuthenticatedView(APIView):
+    
     def dispatch(self, request, *args, **kwargs):
 
         if request.user.is_authenticated:

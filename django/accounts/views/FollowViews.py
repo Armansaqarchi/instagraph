@@ -55,9 +55,10 @@ class FollowRQ(LoginRequiredMixin, GenericAPIView):
     login_url = "accounts/login"
 
     def post(self, request, following_id) -> Response:
-        following_user = Account.objects.filter(id = following_id)
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", request.user.is_authenticated)
+        following_user = Account.objects.filter(id = following_id).first()
 
-        is_following = following_id.received_set.filter(sender = request.user.account.id)
+        is_following = following_user.received_set.filter(sender = request.user.account.id)
 
         if is_following:
             message = f"user {following_user.id} is already being followed"
