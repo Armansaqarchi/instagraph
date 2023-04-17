@@ -16,6 +16,7 @@ from ..models import Activation
 from django.utils.decorators import method_decorator
 from django.http import Http404
 from django.conf import settings
+import rest_framework_simplejwt
 from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
     AccountSerializer,
@@ -115,7 +116,7 @@ class LoginView(NotAuthenticatedView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-
+    
     permission_classes = [AllowAny]
 
 
@@ -126,10 +127,15 @@ class LoginView(NotAuthenticatedView):
         # if request.user.is_authenticated:
         #     return redirect("profile")
 
-        username = request.data["username"]
-        password = request.data["password"]
+        try:
+            username = request.data["username"]
+            password = request.data["password"]
+        except KeyError:
+            username= None
+            password = None
 
-        user = authenticate(username = username, password = password)
+
+        user = authenticate(request, username = username, password = password)
 
         if user is not None:
             logger.info(f"user %s successfully authenticated".format(request.user.id))
@@ -154,10 +160,13 @@ class LoginView(NotAuthenticatedView):
             
             else: url_is_safe = None
 
+
+            
+
             return Response({"message" : message, "status" : "success", "redirect" : redirect_to, "url_is_safe" : url_is_safe}, HTTP_200_OK)
         else:
             logger.info(f"failed to authenticate user %s".format(request.user.id))
-            message = "username or password is incorrect"
+            message = "failed to authenticate user"
             return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
         
 

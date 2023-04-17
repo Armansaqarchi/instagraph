@@ -192,9 +192,9 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'django.contrib.auth.backends.ModelBackend'
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
     )
+    
 }
 
 EMAIL_USE_TLS = True
