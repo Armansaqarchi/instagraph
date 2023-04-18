@@ -30,11 +30,13 @@ class AccountSerializer(ModelSerializer):
         Object instance -> Dict of primitive datatypes.
         """
 
-        ret["firstname"] = instance.user.first_name
-        ret["lastname"] = instance.user.last_name
-
-
+    
         ret = OrderedDict()
+
+
+        ret["first_name"] = instance.user.first_name
+        ret["last_name"] = instance.user.last_name
+
         fields = self._readable_fields
 
         for field in fields:
@@ -60,12 +62,12 @@ class AccountSerializer(ModelSerializer):
 
 
 class UserCreationSerializer(Serializer):
-    first_name = serializers.SerializerMethodField(required = False)
-    last_name = serializers.SerializerMethodField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
     username = serializers.CharField()
     email = serializers.EmailField()
-    password1 = serializers.CharField()
-    password2 = serializers.CharField()
+    password = serializers.CharField()
+
     class Meta:
         
         fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
@@ -81,7 +83,9 @@ class UserCreationSerializer(Serializer):
 
     def create(self, validated_data):
 
-        password = make_password(validated_data["password1"])
+        password = make_password(validated_data["password"])
+
+
 
         user = User.objects.create(
             username = validated_data['username'],

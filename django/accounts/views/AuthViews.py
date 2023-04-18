@@ -16,7 +16,6 @@ from ..models import Activation
 from django.utils.decorators import method_decorator
 from django.http import Http404
 from django.conf import settings
-import rest_framework_simplejwt
 from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
     AccountSerializer,
@@ -60,6 +59,7 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
     
 
     def has_object_permission(self, request, obj):
+
         
         if request.method in SAFE_METHODS: # read access
             logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
@@ -114,6 +114,7 @@ class LoginView(NotAuthenticatedView):
 
     @method_decorator(sensitive_post_parameters('password'))
     def dispatch(self, request, *args, **kwargs):
+        
         return super().dispatch(request, *args, **kwargs)
 
     
@@ -124,24 +125,23 @@ class LoginView(NotAuthenticatedView):
     
     def post(self, request) -> Response:
 
-        # if request.user.is_authenticated:
-        #     return redirect("profile")
-
-        try:
-            username = request.data["username"]
-            password = request.data["password"]
-        except KeyError:
-            username= None
-            password = None
+        
+        
+        
+        username = request.data["username"]
+        password = request.data["password"]
 
 
-        user = authenticate(request, username = username, password = password)
+
+        user = authenticate(username = username, password = password)
 
         if user is not None:
-            logger.info(f"user %s successfully authenticated".format(request.user.id))
+            
+            logger.info(f"user %s successfully authenticated".format(user.account.id))
             #give user the token 
             login(request=request, user=user)
             message = "successfully logged in"
+
 
             # there might be a redirect url which user redirect to when login is done
             # this url first needs to be checked to see if allowed to serve as a host
@@ -184,10 +184,16 @@ class SignUpView(APIView):
     def post(self, request) -> Response:
         
         user = UserCreationSerializer(data=request.data)
+
+
         try:
             if user.is_valid(raise_exception=True):
 
+                print("666666666", user.validated_data["first_name"])
+
                 instance = user.save()
+
+                
 
                 # this feature is temporarily false due to problem with sending email
                 if settings.ENABLE_USER_ACTIVATION:
