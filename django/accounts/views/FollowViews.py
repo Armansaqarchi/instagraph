@@ -4,8 +4,13 @@ from rest_framework.generics import ListAPIView
 from ..api.serializer import (
     FollowerSerializer,
 )
+from rest_framework.decorators import api_view
+from rest_framework.renderers import JSONRenderer
+from rest_framework.views import APIView
 from ..models import Account
+from rest_framework.decorators import renderer_classes
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView
 import logging
 from rest_framework.status import(
@@ -32,6 +37,11 @@ class IsFollowerPermission(BasePermission):
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
 
+
+    def dispatch(self, request, *args, **kwargs):
+        
+        return super().dispatch(request, *args, **kwargs)
+
     permission_classes = [IsFollowerPermission]
     serializer_class = FollowerSerializer
     login_url = "accounts/login"
@@ -50,13 +60,29 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
         return Response({"followers" : serializer.data}, status=HTTP_200_OK)
     
 
+from django.shortcuts import render
 
-class FollowRQ(LoginRequiredMixin, GenericAPIView):
-    login_url = "accounts/login"
+@api_view(['GET'])
+@renderer_classes((JSONRenderer,))
+def test(request):
+    return HttpResponse({"username" : request.user.username})
+
+
+
+
+class FollowRQ(APIView):
+
+
+    # def dispatch(self, request: http.HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    #     return super().dispatch(request, *args, **kwargs)
+
+
+    # login_url = "accounts/login"
 
     def post(self, request, following_id) -> Response:
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", request.user.is_authenticated)
         following_user = Account.objects.filter(id = following_id).first()
+
+        print("^^^^^^^^", request.user.is_authenticated)
 
         is_following = following_user.received_set.filter(sender = request.user.account.id)
 
