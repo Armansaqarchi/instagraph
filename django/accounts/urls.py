@@ -5,7 +5,7 @@ from .views.AuthViews import (
     SingleProfileView,
     LoginView,
     SignUpView,
-    Activate
+    Activate,
 )
 from .views.FollowViews import(
     FollowersView,
