@@ -19,6 +19,8 @@ from rest_framework.status import(
     HTTP_208_ALREADY_REPORTED
 )
 
+from rest_framework.request import Request
+
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,8 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
     def get(self, request) -> Response:
         try:
+
+            
             followers_list = self.get_object()
             serializer = FollowerSerializer(followers_list, many=True)
         except Exception:
@@ -61,11 +65,14 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
     
 
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 @api_view(['GET'])
 @renderer_classes((JSONRenderer,))
+@login_required(login_url="login")
 def test(request):
-    return HttpResponse({"username" : request.user.username})
+    print(request.user.is_authenticated)
+    return HttpResponse({"username" : request.user.is_authenticated})
 
 
 
@@ -73,18 +80,18 @@ def test(request):
 class FollowRQ(APIView):
 
 
-    # def dispatch(self, request: http.HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-    #     return super().dispatch(request, *args, **kwargs)
+    def dispatch(self, request, following_id) -> HttpResponse:
+        print(type(request))
+        return super().dispatch(request, following_id = following_id)
 
 
     # login_url = "accounts/login"
 
-    def post(self, request, following_id) -> Response:
+    def get(self, request, following_id) -> Response:
+        print(type(request))
         following_user = Account.objects.filter(id = following_id).first()
-
-        print("^^^^^^^^", request.user.is_authenticated)
-
-        is_following = following_user.received_set.filter(sender = request.user.account.id)
+        
+        is_following = following_user.received_set.filter(sender = request.user.account.id).exists()
 
         if is_following:
             message = f"user {following_user.id} is already being followed"

@@ -29,7 +29,6 @@ class AccountSerializer(ModelSerializer):
         """
         Object instance -> Dict of primitive datatypes.
         """
-
     
         ret = OrderedDict()
 
