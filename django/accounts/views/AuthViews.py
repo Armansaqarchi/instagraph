@@ -56,10 +56,7 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
     login_url = "accounts/login"
     renderer_classes = [JSONRenderer]
 
-    
-
     def has_object_permission(self, request, obj):
-        
         if request.method in SAFE_METHODS: # read access
             logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
             return True, "SAFE"
@@ -101,8 +98,10 @@ class SingleProfileView(LoginRequiredMixin, GenericAPIView):
             return Response({"message" : "page not found"}, status=HTTP_404_NOT_FOUND)
         except Http404:
             return Response({"message" : f"no user id {pk} found", "status" : "error"}, HTTP_404_NOT_FOUND)
-        
+    
 
+
+    
 class LoginView(NotAuthenticatedView):
 
     """
@@ -110,12 +109,7 @@ class LoginView(NotAuthenticatedView):
     but since passowrd would better not shown in logs, it would better to treat as sensitive arg
     """
 
-
-    @method_decorator(sensitive_post_parameters('password'))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-
+    
     permission_classes = [AllowAny]
 
 
@@ -123,19 +117,19 @@ class LoginView(NotAuthenticatedView):
     
     def post(self, request) -> Response:
 
-        # if request.user.is_authenticated:
-        #     return redirect("profile")
-
+        
         username = request.data["username"]
         password = request.data["password"]
+
 
         user = authenticate(username = username, password = password)
 
         if user is not None:
-            logger.info(f"user %s successfully authenticated".format(request.user.id))
-            #give user the token 
+            
+            logger.info(f"user %s successfully authenticated".format(user.account.id))
             login(request=request, user=user)
             message = "successfully logged in"
+
 
             # there might be a redirect url which user redirect to when login is done
             # this url first needs to be checked to see if allowed to serve as a host
@@ -154,36 +148,31 @@ class LoginView(NotAuthenticatedView):
             
             else: url_is_safe = None
 
-            return Response({"message" : message, "status" : "success", "redirect" : redirect_to, "url_is_safe" : url_is_safe}, HTTP_200_OK)
+
+            return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
         else:
             logger.info(f"failed to authenticate user %s".format(request.user.id))
-            message = "username or password is incorrect"
+            message = "failed to authenticate user"
             return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
-        
-
-        
+           
 
 
-
+    
 class SignUpView(APIView):
 
     permission_classes = [AllowAny]
 
-
-
-
     def post(self, request) -> Response:
         
         user = UserCreationSerializer(data=request.data)
+
+
         try:
             if user.is_valid(raise_exception=True):
 
                 instance = user.save()
-
                 # this feature is temporarily false due to problem with sending email
                 if settings.ENABLE_USER_ACTIVATION:
-                
-                    
                     act = Activation.objects.create(
                         user = instance,
                         code = digit_random6(),
@@ -203,7 +192,6 @@ class SignUpView(APIView):
         except UsernameExistsException:
             return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
         
-
 
 class Activate(APIView):
 

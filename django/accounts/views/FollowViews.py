@@ -4,8 +4,13 @@ from rest_framework.generics import ListAPIView
 from ..api.serializer import (
     FollowerSerializer,
 )
+from rest_framework.decorators import api_view
+from rest_framework.renderers import JSONRenderer
+from rest_framework.views import APIView
 from ..models import Account
+from rest_framework.decorators import renderer_classes
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView
 import logging
 from rest_framework.status import(
@@ -13,6 +18,8 @@ from rest_framework.status import(
     HTTP_200_OK,
     HTTP_208_ALREADY_REPORTED
 )
+
+from rest_framework.request import Request
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +39,11 @@ class IsFollowerPermission(BasePermission):
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
 
+
+    def dispatch(self, request, *args, **kwargs):
+        
+        return super().dispatch(request, *args, **kwargs)
+
     permission_classes = [IsFollowerPermission]
     serializer_class = FollowerSerializer
     login_url = "accounts/login"
@@ -43,6 +55,8 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
     def get(self, request) -> Response:
         try:
+
+            
             followers_list = self.get_object()
             serializer = FollowerSerializer(followers_list, many=True)
         except Exception:
@@ -50,15 +64,34 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
         return Response({"followers" : serializer.data}, status=HTTP_200_OK)
     
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
-class FollowRQ(LoginRequiredMixin, GenericAPIView):
-    login_url = "accounts/login"
+@api_view(['GET'])
+@renderer_classes((JSONRenderer,))
+@login_required(login_url="login")
+def test(request):
+    print(request.user.is_authenticated)
+    return HttpResponse({"username" : request.user.is_authenticated})
 
-    def post(self, request, following_id) -> Response:
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", request.user.is_authenticated)
+
+
+
+class FollowRQ(APIView):
+
+
+    def dispatch(self, request, following_id) -> HttpResponse:
+        print(type(request))
+        return super().dispatch(request, following_id = following_id)
+
+
+    # login_url = "accounts/login"
+
+    def get(self, request, following_id) -> Response:
+        print(type(request))
         following_user = Account.objects.filter(id = following_id).first()
-
-        is_following = following_user.received_set.filter(sender = request.user.account.id)
+        
+        is_following = following_user.received_set.filter(sender = request.user.account.id).exists()
 
         if is_following:
             message = f"user {following_user.id} is already being followed"
