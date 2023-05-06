@@ -111,7 +111,7 @@ class Activation(models.Model):
 
 class MediaProfile:
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="image_set")
     content_url = models.URLField(max_length=200)
     set_at = models.DateField(auto_now_add=True)
 
