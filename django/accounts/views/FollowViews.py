@@ -4,6 +4,7 @@ from rest_framework.generics import ListAPIView
 from ..api.serializer import (
     FollowerSerializer,
 )
+from django.db.models import Q
 from ..models import Follows
 from rest_framework.decorators import api_view
 from rest_framework.renderers import JSONRenderer
@@ -115,6 +116,14 @@ class AcceptRQ(LoginRequiredMixin, APIView):
 
     login_url = settings.LOGIN_URL
 
-    def get(self, request, following) -> Response:
+    def get(self, request, follower) -> Response:
+        is_requested = FollowRQ.objects.filter(Q(recipient__ignorecase = request.user.account.id) & Q(sender_ignorecase = follower))
 
+        if not is_requested:
+            Follows.objects.get_or_create(
+                follower = follower,
+                following = request.user.account.id
+            )
 
+            return Response({"message" : f"accepted {follower} request"}, status=HTTP_200_OK)
+        return Response({"message" : "sender is already following you", "status" : "error"}, status=HTTP_403_FORBIDDEN)
