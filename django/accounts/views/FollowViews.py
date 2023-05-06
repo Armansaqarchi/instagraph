@@ -70,13 +70,17 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
        
 
     def get_paginator(self, request):
-        items = self._resolve_json(self.get_queryset())
-        paginator = Paginator(items, self.paginate_by)
-        #getting page num from url params
-        page_num = request.GET["page"]
+        try:
+            items = self._resolve_json(self.get_queryset())
+            paginator = Paginator(items, self.paginate_by)
+            #getting page num from url params
+            page_num = request.GET["page"]
+        except (PageNotAnInteger, EmptyPage):
+            page = 1
+
         page_obj = paginator.get_page(page_num)
         return page_obj
-
+        
 
     def get(self, request) -> Response:
         try:
