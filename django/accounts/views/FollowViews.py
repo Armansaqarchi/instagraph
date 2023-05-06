@@ -91,10 +91,18 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
 
 
-class FollowRQ(APIView):
+class FollowRQ(LoginRequiredMixin, APIView):
+
+
 
     def get(self, request, following_id) -> Response:
+        print(request.POST.get("csrftokenmiddleware", ''))
+        
         following_user = Account.objects.filter(id = following_id).first()
+
+        if following_user is None:
+            return Response({"message" : f"no user id : {following_id}"}, status=HTTP_400_BAD_REQUEST)
+        
         has_requested = following_user.received_set.filter(sender = request.user.account.id).exists()
         if has_requested:
             message = f"user {following_user.id} is already being followed"
@@ -119,9 +127,10 @@ class FollowRQ(APIView):
             message = "successfully sent friendly request"
             return Response({"message" : message, "status" : "success"}, status = HTTP_200_OK)
         else:
+            following_acc = Account.objects.get(id = following_id)
             Follows.objects.create(
-                follower = request.user.id,
-                following = following_id
+                follower = request.user.account,
+                following = following_acc
             )
             message = "strated following %s".format(following_user.user.username)
             logger.info("user %s started following user %s".format(request.user.id, following_id))
