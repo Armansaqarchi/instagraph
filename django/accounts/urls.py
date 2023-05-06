@@ -10,7 +10,7 @@ from .views.AuthViews import (
 from .views.FollowViews import(
     FollowersView,
     FollowRQ,
-    test
+    AcceptRQ
 )
 
 
@@ -21,7 +21,7 @@ urlpatterns = [
     re_path(r"^followers/(?P<id>.+)/$", FollowersView.as_view(), name="followers"),
     re_path(r"^activate/(?P<id>.+)/$", Activate.as_view(), name="activate"),
     re_path(r"^follow_req/(?P<following_id>[0-9]+)", FollowRQ.as_view(), name= "follow_req"),
-    path("test", test, name = "test")
+    re_path(r"^accept_req/(?P<follower>)", AcceptRQ.as_view(), name="accept_req")
 ] 
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

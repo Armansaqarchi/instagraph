@@ -11,9 +11,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
 from django.utils.http import url_has_allowed_host_and_scheme as is_url_safe
 from django.core.exceptions import ValidationError
-from django.views.decorators.debug import sensitive_post_parameters
 from ..models import Activation
-from django.utils.decorators import method_decorator
 from django.http import Http404
 from django.conf import settings
 from ..utils import digit_random6, signup_verification
@@ -112,7 +110,6 @@ class LoginView(NotAuthenticatedView):
     
     permission_classes = [AllowAny]
 
-
     # no method 'get' since it will be handled from client side
     
     def post(self, request) -> Response:
@@ -159,13 +156,11 @@ class LoginView(NotAuthenticatedView):
 
     
 class SignUpView(APIView):
-
     permission_classes = [AllowAny]
 
     def post(self, request) -> Response:
         
         user = UserCreationSerializer(data=request.data)
-
 
         try:
             if user.is_valid(raise_exception=True):
@@ -182,6 +177,7 @@ class SignUpView(APIView):
                     return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
                                       "status" : "success"}, status=HTTP_200_OK)
                 else:
+                    authenticate(request=request)
                     logger.info(f"a new user signed up : %s".format(request.user.id))
                     return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
             
@@ -212,9 +208,6 @@ class Activate(APIView):
         return Response({"message" : "failed to varify code", "status" : "error"}, status=HTTP_401_UNAUTHORIZED)
 
 
-
-
-    
 
 
 
