@@ -4,6 +4,8 @@ from rest_framework.generics import ListAPIView
 from ..api.serializer import (
     FollowerSerializer,
 )
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from ..models import Follows
 from rest_framework.decorators import api_view
@@ -48,30 +50,40 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
     login_url = "accounts/login"
     paginate_by = 20
 
+
+    @property
+    def _resolve_json(followers):
+        try:
+            json = {}
+            followers_id = followers.values_list("follower", flat = True)
+            followers_account = Account.objects.filter(id__in = followers_id)
+            for item in followers_account:
+                json_item = {}.update({"username" : item.username, "follower_image" : item.image_set.first()})
+                json.update(json_item)
+
+        except Exception:
+            return False
+        
     def get_queryset(self):
-        account = Account.objects.get(pk=self.kwargs['pk'])
+        account = Account.objects.get_or_404(pk=self.kwargs['pk'])
         return account.following_set.all()
+       
+
+    def get_paginator(self, request):
+        items = self._resolve_json(self.get_queryset())
+        paginator = Paginator(items, self.paginate_by)
+        #getting page num from url params
+        page_num = request.GET["page"]
+        page_obj = paginator.get_page(page_num)
+        return page_obj
+
 
     def get(self, request) -> Response:
         try:
-            
-            followers_list = self.get_object()
-            serializer = FollowerSerializer(followers_list, many=True)
+            page_obj = self.get_paginator(request=request)
         except Exception:
             return Response({"status" : "error"}, HTTP_400_BAD_REQUEST)
-        return Response({"followers" : serializer.data}, status=HTTP_200_OK)
-    
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-
-@api_view(['GET'])
-@renderer_classes((JSONRenderer,))
-@login_required(login_url="login")
-def test(request):
-    print(request.user.is_authenticated)
-    return HttpResponse({"username" : request.user.is_authenticated})
-
+        return Response({"page" : page_obj}, status=HTTP_200_OK)
 
 
 
@@ -127,3 +139,4 @@ class AcceptRQ(LoginRequiredMixin, APIView):
 
             return Response({"message" : f"accepted {follower} request"}, status=HTTP_200_OK)
         return Response({"message" : "sender is already following you", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+    

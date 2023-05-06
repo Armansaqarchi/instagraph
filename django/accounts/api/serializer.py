@@ -107,7 +107,7 @@ class UserCreationSerializer(Serializer):
     
 
 
-class FollowerSerializer(Serializer):
+class FolloweRQSerializer(Serializer):
     follows_id = serializers.IntegerField(source="follows_id")
     follower = serializers.CharField(source="follower")
     following = serializers.CharField(source="following")
@@ -115,14 +115,25 @@ class FollowerSerializer(Serializer):
     class Meta:
         fields = ["follows_id", "follower", "following", "is_private"]
 
-
     def create(self, validated_data):
         follows = Follows.objects.create(
             follower = validated_data["follower"],
             following = validated_data["following"]
         )
 
-        return follows       
+        return follows    
+
+   
+class FollowerSerializer(Serializer):
+    follows_id = serializers.IntegerField() 
+    follower = serializers.IntegerField()
+    follower_image = serializers.ImageField()
+    is_private = serializers.BooleanField()
+
+    class Meta:
+        fields = ["follows_id", "follower", "follower_image", "is_private"]
+
+    
         
 
 class EmailExistsException(ValidationError):
