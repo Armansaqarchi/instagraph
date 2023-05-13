@@ -15,7 +15,6 @@ FR_STATUS = (
 
 class Account(models.Model):
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
-    email = models.EmailField(max_length=50, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
     bio = models.TextField(max_length=500)
@@ -49,12 +48,19 @@ class Follows(models.Model):
         db_table = 'follows'
         ordering = ['start_following_at']
 
+        # there are 2 constraints so far, one for checking wheater follower not quals following!
+        # and second, to check that only one pair of (follower, following) exists at a time
+        constraints = [
+            models.CheckConstraint(check=~models.Q(follower=models.F('following')), name='dont_follow_yourself'),
+            models.UniqueConstraint(fields=["follower", "following"], name="only_follow_once")
+        ]
+
     def __str__(self):
-        return self.follower + "->" + self.following
+        return self.follower.user.username + "->" + self.following.user.username
 
 
 class FollowRQ(models.Model):
-    id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
+    id = models.UUIDField(default=uuid4, null=False, primary_key=True, editable = False, unique=True)
     sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="sent_set") # temporarily True, in debugging mode
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
@@ -67,6 +73,9 @@ class FollowRQ(models.Model):
     class Meta:
         db_table = "follow_requests"
         ordering = ["sent_at"]
+        constraints = [
+            models.CheckConstraint(check=~models.Q(sender = models.F('recipient')), name="dont request yourself")
+        ]
 
 
 class Story(models.Model):
@@ -109,12 +118,12 @@ class Activation(models.Model):
         ordering = ['created_at']
 
 
-class MediaProfile:
+class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="image_set")
     content_url = models.URLField(max_length=200)
     set_at = models.DateField(auto_now_add=True)
 
     class Meta:
+        db_table = "profile"
         ordering = ['set_at']
-        db_table = "media_profile"
