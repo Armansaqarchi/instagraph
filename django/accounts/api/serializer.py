@@ -129,13 +129,20 @@ class FollowRQSerializer(Serializer):
 
    
 class FollowerSerializer(Serializer):
-    follows_id = serializers.IntegerField() 
-    follower = serializers.IntegerField()
-    follower_image = serializers.ImageField()
+    follows_id = serializers.IntegerField(source = "id")
+    follower = serializers.SerializerMethodField()
+    following_image = serializers.SerializerMethodField()
     is_private = serializers.BooleanField()
 
     class Meta:
-        fields = ["follows_id", "follower", "follower_image", "is_private"]
+        fields = ('follows_id', 'following')
+
+
+    def get_follower(self, obj):
+        return obj.user.username
+    
+    def get_following_image(self, obj):
+        return obj.image_set.first().profile_image.url
 
 
 class FollowingSerializer(Serializer):
