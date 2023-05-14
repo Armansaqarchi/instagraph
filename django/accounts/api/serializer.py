@@ -142,21 +142,18 @@ class FollowingSerializer(Serializer):
     follows_id = serializers.IntegerField(source = "id")
     following = serializers.SerializerMethodField()
     following_image = serializers.SerializerMethodField()
-    is_private = serializers.SerializerMethodField()
+    is_private = serializers.BooleanField()
 
     class Meta:
         fields = ('follows_id', 'following')
 
 
-    def get_following_image(self, obj):
-        return get_object_or_404(Account, id = obj.following.id)
-
-
-    def get_is_private(self, obj):
-        return Account.objects.get(id = obj.following.id).is_private
-    
     def get_following(self, obj):
-        return Account.objects.get(id = obj.following.id).user.username
+        return obj.user.username
+    
+    def get_following_image(self, obj):
+        return obj.image_set.first().profile_image.url
+
         
 
 class EmailExistsException(ValidationError):

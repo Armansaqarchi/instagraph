@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Story, Account, Follows
+from .models import Story, Account, Follows, MediaProfile
 # Register your models here.
 
 
@@ -7,3 +7,4 @@ from .models import Story, Account, Follows
 admin.site.register(Story)
 admin.site.register(Account)
 admin.site.register(Follows)
+admin.site.register(MediaProfile)
