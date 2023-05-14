@@ -53,24 +53,11 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
     login_url = "accounts/login"
     paginate_by = 20
 
-    
-    def _resolve_json(self, followers):
-        try:
-            
-            list = []
-            followers_id = followers.values_list("follower", flat = True)
-            followers_account = Account.objects.filter(id__in = followers_id)
-
-            for item in followers_account:
-                dict_item = {"username" : item.user.username, "follower_image" : item.image_set.first()}
-                list.append(dict_item)
-
-            return list
-        except Exception:
-            return None
         
-    def get_queryset(self, account):
-        return account.following_set.all()
+    def get_queryset(self, id):
+        account = get_object_or_404(Account, id=id)
+        followings_id = account.following_set.values_list('follower', flat = True)
+        return Account.objects.filter(id__in = followings_id)
        
     def get_paginator(self, request, id):
         try:
@@ -100,26 +87,36 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
 class FollowingList(LoginRequiredMixin, ListAPIView):
 
-    # permission_classes = [IsFollowerPermission]
+    permission_classes = [IsFollowerPermission]
     paginate_by = 20
     login_url = settings.LOGIN_REDIRECT_URL
 
+
     def get_page(self, request, object_list):
-        page_num = request.GET.get('page')
-        paginator = Paginator(object_list, self.paginate_by)
-        page_obj = paginator.get_page(page_num)
-        return page_obj
+        try:
+            paginator = Paginator(object_list, self.paginate_by)
+            page_num = request.GET.get('page')
+        except Exception as e:
+            page_num = 1
+        return paginator.get_page(page_num)
 
     def get_queryset(self, id):
         account = get_object_or_404(Account, id=id)
-        return account.follower_set.all()
+        followings_id = account.follower_set.values_list('following', flat = True)
+        return Account.objects.filter(id__in = followings_id)
 
     def get(self, request, id):
-        page_obj = self.get_page(request, self.get_queryset(id=id))
-        serializer = FollowingSerializer(page_obj.object_list, many=True)
-        return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
-
-
+        try:
+            account = get_object_or_404(Account, id=id)
+            self.check_object_permissions(request, account)
+            page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
+            serializer = FollowingSerializer(page_objs, many=True)
+            return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
+        except PermissionDenied:
+            return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
+        
 
     
 class FollowRQ(LoginRequiredMixin, APIView):
