@@ -5,7 +5,8 @@ from rest_framework.permissions import BasePermission
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import ListAPIView
 from ..api.serializer import (
-    FollowerSerializer,
+    FollowingSerializer,
+    FollowerSerializer
 )
 from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
@@ -61,7 +62,7 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
        
     def get_paginator(self, request, id):
         try:
-            items = self._resolve_json(self.get_queryset(id = id))
+            items = self.get_queryset(self, id)
             paginator = Paginator(items, self.paginate_by)
             #getting page num from url params
             page_num = request.GET["page"]
@@ -72,17 +73,17 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
         return page_obj
         
 
-    def get(self, request, id) -> Response:
-        account = get_object_or_404(Account, id=id)
+    def get(self, request, id):
         try:
-            if not self.check_object_permissions(request, account):
-                return Response({"message" : "permission denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
-            page_obj = self.get_paginator(request=request, id=id)
+            account = get_object_or_404(Account, id=id)
+            self.check_object_permissions(request, account)
+            page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
+            serializer = FollowerSerializer(page_objs, many=True)
+            return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied:
-            return Response({"message" : "permission denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+            return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
         except Exception as e:
             return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
-        return Response({"page" : page_obj.object_list}, status=HTTP_200_OK)
 
 
 class FollowingList(LoginRequiredMixin, ListAPIView):
