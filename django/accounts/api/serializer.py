@@ -5,6 +5,10 @@ from rest_framework.exceptions import APIException
 from rest_framework.validators import ValidationError
 from collections import OrderedDict
 from rest_framework.fields import SkipField
+import base64
+from django.shortcuts import get_object_or_404
+from os import path
+from django.conf import settings
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -107,7 +111,7 @@ class UserCreationSerializer(Serializer):
     
 
 
-class FolloweRQSerializer(Serializer):
+class FollowRQSerializer(Serializer):
     follows_id = serializers.IntegerField(source="follows_id")
     follower = serializers.CharField(source="follower")
     following = serializers.CharField(source="following")
@@ -133,7 +137,26 @@ class FollowerSerializer(Serializer):
     class Meta:
         fields = ["follows_id", "follower", "follower_image", "is_private"]
 
+
+class FollowingSerializer(Serializer):
+    follows_id = serializers.IntegerField(source = "id")
+    following = serializers.SerializerMethodField()
+    following_image = serializers.SerializerMethodField()
+    is_private = serializers.SerializerMethodField()
+
+    class Meta:
+        fields = ('follows_id', 'following')
+
+
+    def get_following_image(self, obj):
+        return get_object_or_404(Account, id = obj.following.id)
+
+
+    def get_is_private(self, obj):
+        return Account.objects.get(id = obj.following.id).is_private
     
+    def get_following(self, obj):
+        return Account.objects.get(id = obj.following.id).user.username
         
 
 class EmailExistsException(ValidationError):

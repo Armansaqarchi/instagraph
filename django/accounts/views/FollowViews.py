@@ -13,15 +13,12 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from ..models import Follows
-from rest_framework.decorators import api_view
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 from ..models import Account
-from rest_framework.decorators import renderer_classes
 from rest_framework.response import Response
-from django.http import HttpResponse
-from rest_framework.generics import GenericAPIView
 import logging
+from ..api.serializer import FollowingSerializer
 from rest_framework.status import(
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK,
@@ -52,8 +49,7 @@ class OwnerPermission(BasePermission):
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
 
-    permission_classes = [IsFollowerPermission]
-    serializer_class = FollowerSerializer
+    # permission_classes = [IsFollowerPermission]
     login_url = "accounts/login"
     paginate_by = 20
 
@@ -102,7 +98,30 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
         return Response({"page" : page_obj.object_list}, status=HTTP_200_OK)
 
 
+class FollowingList(LoginRequiredMixin, ListAPIView):
 
+    # permission_classes = [IsFollowerPermission]
+    paginate_by = 20
+    login_url = settings.LOGIN_REDIRECT_URL
+
+    def get_page(self, request, object_list):
+        page_num = request.GET.get('page')
+        paginator = Paginator(object_list, self.paginate_by)
+        page_obj = paginator.get_page(page_num)
+        return page_obj
+
+    def get_queryset(self, id):
+        account = get_object_or_404(Account, id=id)
+        return account.follower_set.all()
+
+    def get(self, request, id):
+        page_obj = self.get_page(request, self.get_queryset(id=id))
+        serializer = FollowingSerializer(page_obj.object_list, many=True)
+        return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
+
+
+
+    
 class FollowRQ(LoginRequiredMixin, APIView):
         
 
