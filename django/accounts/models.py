@@ -1,3 +1,4 @@
+from typing import Iterable, Optional
 from django.db import models
 from uuid import uuid4
 
@@ -118,11 +119,19 @@ class Activation(models.Model):
         ordering = ['created_at']
 
 
+
+
+
+
 class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="image_set")
-    content_url = models.URLField(max_length=200)
+    profile_image = models.ImageField(max_length=200)
     set_at = models.DateField(auto_now_add=True)
+
+    def save(self, force_insert: bool = ..., force_update: bool = ..., using: str | None = ..., update_fields: Iterable[str] | None = ...) -> None:
+        self.profile_image.upload_to = f"images/users/profiles/{self.user_id}/{self.id}"
+        return super().save(force_insert, force_update, using, update_fields)
 
     class Meta:
         db_table = "profile"
