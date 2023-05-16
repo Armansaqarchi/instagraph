@@ -22,7 +22,6 @@ def create_Account(sender, instance, created, **kwargs):
         user = instance
         Account.objects.create(
             user = user,
-            email = user.email,
         )
 
 
