@@ -23,6 +23,7 @@ class Account(models.Model):
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
     posts = models.PositiveBigIntegerField(default = 0)
+    last_seen_posts = models.DateTimeField(default = None,null=True)
     fr_counts = models.PositiveBigIntegerField(default=0)
     
 
