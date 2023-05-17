@@ -234,6 +234,8 @@ CHECK_URLS = True
 
 ENABLE_USER_ACTIVATION = False
 
+USER_DEFUALT_PROFILE = "static/images/users/profile/default.png"
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
