@@ -44,11 +44,12 @@ class Comment(models.Model):
 
 
 
-class MediaPost:
+class MediaPost(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
-    content_url = models.URLField(max_length=200)
+    content_url = models.ImageField(max_length=200, upload_to="images/users/profiles/", default="images/users/profiles/default/default.png")
     posted_at = models.DateField(auto_now_add=True)
+    page_num = models.IntegerField(null=False, default=1)
 
     class Meta:
         ordering = ['posted_at']
