@@ -1,7 +1,7 @@
 from typing import Iterable, Optional
 from django.db import models
 from uuid import uuid4
-
+from django.conf import settings
 from django.contrib.auth.models import User
 
 # Create your models here.
@@ -121,7 +121,7 @@ class Activation(models.Model):
 class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="image_set")
-    profile_image = models.ImageField(max_length=200, default = 'images/users/profiles/default.png', null=True, upload_to='images/users/profiles/')
+    profile_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_PROFILE , null=True, upload_to=settings.PROFILE_UPLOAD_DIR)
     set_at = models.DateField(auto_now_add=True)
 
     class Meta:
