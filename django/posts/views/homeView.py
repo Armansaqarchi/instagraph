@@ -20,8 +20,6 @@ from rest_framework.status import (
 TTL = settings.DEFAULT_CACHE_TIMEOUT
 TTL = TTL if TTL else 300
 
-
-
 @cache_page(TTL)
 class HomeVIew(LoginRequiredMixin, ListAPIView):
     permission_classes = [OwnerPermission]
@@ -55,10 +53,10 @@ class HomeVIew(LoginRequiredMixin, ListAPIView):
         posts = self.get_posts(request, followings=following_set)
         new_posts = self.get_paginator(self, request, posts=posts)
 
-
+        last_seen_post = account.last_seen_post
         account.last_seen_posts = datetime.now()
         account.save() 
-        return Response({"status" : "success", "posts" : new_posts}, status = HTTP_200_OK)
+        return Response({"status" : "success", "posts" : new_posts, "last_seen" : last_seen_post}, status = HTTP_200_OK)
 
         
 

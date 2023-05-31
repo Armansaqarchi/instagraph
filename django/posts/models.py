@@ -1,7 +1,7 @@
 from django.db import models
 from uuid import uuid4
 from accounts.models import Account
-
+from django.conf import settings
 
 
 class Post(models.Model):
@@ -47,10 +47,11 @@ class Comment(models.Model):
 class MediaPost(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
-    content_url = models.ImageField(max_length=200, upload_to="images/users/profiles/", default="images/users/profiles/default/default.png")
+    content_url = models.ImageField(max_length=200, upload_to=settings.DEFAULT_POST_DIR)
     posted_at = models.DateField(auto_now_add=True)
     page_num = models.IntegerField(null=False, default=1)
 
     class Meta:
+        unique_together = ('post_id', 'page_num')
         ordering = ['posted_at']
         db_table = "media_post"
