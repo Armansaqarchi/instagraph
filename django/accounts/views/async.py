@@ -1,11 +1,10 @@
 from rest_framework.decorators import api_view
 from ...accounts.models import MediaProfile
-from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from django.conf import settings
 
 
-#asynchronous request 
+#asynchronous request media profile
 @api_view(['GET'])
 def get_profile_image(request, id, num):
     images = MediaProfile.objects.filter(user_id = id).order_by("set_at")
