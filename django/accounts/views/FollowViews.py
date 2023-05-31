@@ -171,11 +171,15 @@ class FollowRQ(LoginRequiredMixin, APIView):
             return Response({"message" : message, "status" : "error"}, status=HTTP_400_BAD_REQUEST)
 
 class AcceptRQ(LoginRequiredMixin, APIView):
+    
 
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
 
     def get(self, request, RQ_id) -> Response:
+        """
+        given RQ_id, accepts the friend reqeust corresponding to the RQ_id
+        """
         is_requested = FollowRQ.objects.filter(id = RQ_id).first()
        
 
@@ -197,12 +201,14 @@ class AcceptRQ(LoginRequiredMixin, APIView):
     
 
 class RQList(LoginRequiredMixin, ListAPIView):
-    
     paginate_by = 20
     login_url = settings.LOGIN_REDIRECT_URL
 
 
     def get(self, request, id) -> Response:
+        """
+        returns list of friend requset
+        """
         RQ_list = FollowRQ.objects.filter(id = id)
 
 

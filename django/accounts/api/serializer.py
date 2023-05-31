@@ -56,9 +56,6 @@ class AccountSerializer(ModelSerializer):
             else:
                 ret[field.field_name] = field.to_representation(attribute)
 
-
-        
-
         return ret
         
 

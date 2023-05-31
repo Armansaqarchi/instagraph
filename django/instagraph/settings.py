@@ -234,8 +234,11 @@ CHECK_URLS = True
 
 ENABLE_USER_ACTIVATION = False
 
-USER_DEFUALT_PROFILE = "static/images/users/profile/default.png"
+USER_DEFAULT_PROFILE = "static/images/users/profile/default.png"
 
+PROFILE_UPLOAD_DIR = "static/images/users/"
+
+DEFAULT_POST_DIR = "static/images/posts"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
