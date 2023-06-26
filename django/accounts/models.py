@@ -22,10 +22,7 @@ class Account(models.Model):
     is_private = models.BooleanField(default=False)
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
-    posts = models.PositiveBigIntegerField(default = 0)
     last_seen_posts = models.DateTimeField(default = None,null=True)
-    fr_counts = models.PositiveBigIntegerField(default=0)
-    
 
     class Meta:
         ordering = ['date_of_birth']
@@ -35,10 +32,6 @@ class Account(models.Model):
     def __str__(self):
         return self.user.username
     
-
-
-
-
 
 class Follows(models.Model):
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)

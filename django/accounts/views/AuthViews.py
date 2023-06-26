@@ -126,12 +126,9 @@ class LoginView(NotAuthenticatedView):
             logger.info(f"user %s successfully authenticated".format(user.account.id))
             login(request=request, user=user)
             message = "successfully logged in"
-
-
+            
             # there might be a redirect url which user redirect to when login is done
             # this url first needs to be checked to see if allowed to serve as a host
-
-
             redirect_to = request.META.get("next")
 
             if settings.CHECK_URLS:
