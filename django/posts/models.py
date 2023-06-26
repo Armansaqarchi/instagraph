@@ -11,7 +11,7 @@ class Post(models.Model):
     likes = models.PositiveBigIntegerField(default = 0)
     comments = models.PositiveBigIntegerField(default = 0)
     created_at = models.DateTimeField(auto_now_add=True)
-    location = models.CharField(max_length=50)
+    location = models.CharField(max_length=50, null=True)
     class Meta:
         db_table = 'posts'
 

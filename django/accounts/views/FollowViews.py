@@ -79,7 +79,12 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
             self.check_object_permissions(request, account)
             page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
             serializer = FollowerSerializer(page_objs, many=True)
-            return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
+
+
+            followers_count = account.following_set.count()
+
+
+            return Response({"page_obj" : serializer.data, "followers_number" : followers_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied:
             return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
         except Exception as e:
@@ -112,7 +117,10 @@ class FollowingList(LoginRequiredMixin, ListAPIView):
             self.check_object_permissions(request, account)
             page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
             serializer = FollowingSerializer(page_objs, many=True)
-            return Response({"page_obj" : serializer.data, "status" : "success"}, status=HTTP_200_OK)
+
+            following_count = account.follower_set.count()
+
+            return Response({"page_obj" : serializer.data, "followings_number" : following_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied:
             return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
         except Exception as e:
@@ -175,6 +183,7 @@ class AcceptRQ(LoginRequiredMixin, APIView):
 
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
+
 
     def get(self, request, RQ_id) -> Response:
         """

@@ -1,9 +1,10 @@
-from rest_framework.views import APIView
+from typing import Any
+from django import http
+from django.http.response import HttpResponse
 from rest_framework.generics import ListAPIView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from ...accounts.views.FollowViews import OwnerPermission
+from accounts.views.FollowViews import OwnerPermission
 from datetime import datetime
-from ...accounts.models import Account
 from ..models import Post
 from django.db.models.query import QuerySet
 from rest_framework.response import Response
@@ -18,19 +19,23 @@ from rest_framework.status import (
 )
 
 TTL = settings.DEFAULT_CACHE_TIMEOUT
-TTL = TTL if TTL else 300
 
-@cache_page(TTL)
-class HomeVIew(LoginRequiredMixin, ListAPIView):
+
+
+class HomeView(LoginRequiredMixin, ListAPIView):
     permission_classes = [OwnerPermission]
-    login_url = settings.REDIRECT_LOGIN_URL
+    login_url = settings.LOGIN_URL
     paginate_by = 7
+
+
+    def dispatch(self, request, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().dispatch(request, *args, **kwargs)
 
     def get_posts(self, request, followings : list):
         posts = QuerySet(model=Post)
-
         for following in followings:
-            posts = posts | following.user_id_set
+            print(following)
+            # posts = posts | following.user_id_set
 
         return posts.order_by("posted_at")
     
@@ -46,10 +51,11 @@ class HomeVIew(LoginRequiredMixin, ListAPIView):
         return paginator.get_page(page_num)
 
 
-    def get(self, request, *args, **kwargs):
+    # @cache_page(TTL)
+    def get(self, request):
         account = request.user.account
         # getting the 'follows' instance in which the user is follower
-        following_set = account.follower_set.values_list('following')
+        following_set = account.follower_set.values_list('following', flat = True)
         posts = self.get_posts(request, followings=following_set)
         new_posts = self.get_paginator(self, request, posts=posts)
 

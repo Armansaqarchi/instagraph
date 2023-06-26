@@ -24,6 +24,7 @@ urlpatterns = [
     re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FollowRQ.as_view(), name= "follow_req"),
     re_path(r"^accept_req/(?P<follower>)", AcceptRQ.as_view(), name="accept_req"),
     re_path(r"^followings/(?P<id>\d+)", FollowingList.as_view(), name = "followings")
+    
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
