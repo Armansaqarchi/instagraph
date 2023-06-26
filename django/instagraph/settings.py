@@ -203,12 +203,13 @@ LOGGING = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         "django.contrib.auth.backends.ModelBackend",
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        
     )
 }
 
-
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 EMAIL_USE_TLS = True

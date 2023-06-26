@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.conf import settings
 from django.views.decorators.cache import cache_page
+from .serializer.post_serializer import PostSerializer
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -21,7 +22,7 @@ from rest_framework.status import (
 TTL = settings.DEFAULT_CACHE_TIMEOUT
 
 
-
+# @cache_page(TTL)
 class HomeView(LoginRequiredMixin, ListAPIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
@@ -37,7 +38,7 @@ class HomeView(LoginRequiredMixin, ListAPIView):
             print(following)
             # posts = posts | following.user_id_set
 
-        return posts.order_by("posted_at")
+        return posts.order_by("created_at")
     
 
     def get_paginator(self, request, posts):
@@ -48,21 +49,23 @@ class HomeView(LoginRequiredMixin, ListAPIView):
         except (PageNotAnInteger,EmptyPage):
             page_num = 1
 
-        return paginator.get_page(page_num)
+        pages = paginator.get_page(page_num)
+        pages_serialized = PostSerializer(pages, many = True)
+        return pages_serialized
 
 
-    # @cache_page(TTL)
+
     def get(self, request):
         account = request.user.account
         # getting the 'follows' instance in which the user is follower
         following_set = account.follower_set.values_list('following', flat = True)
         posts = self.get_posts(request, followings=following_set)
-        new_posts = self.get_paginator(self, request, posts=posts)
+        new_posts = self.get_paginator(request, posts)
 
-        last_seen_post = account.last_seen_post
+        last_seen_post = account.last_seen_posts
         account.last_seen_posts = datetime.now()
         account.save() 
-        return Response({"status" : "success", "posts" : new_posts, "last_seen" : last_seen_post}, status = HTTP_200_OK)
+        return Response({"status" : "success", "posts" : new_posts.data, "last_seen" : last_seen_post}, status = HTTP_200_OK)
 
         
 

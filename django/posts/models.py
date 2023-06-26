@@ -14,6 +14,7 @@ class Post(models.Model):
     location = models.CharField(max_length=50, null=True)
     class Meta:
         db_table = 'posts'
+        ordering = ['created_at']
 
 
 class Like(models.Model):
