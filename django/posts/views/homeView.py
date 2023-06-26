@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.conf import settings
 from django.views.decorators.cache import cache_page
-from .serializer.post_serializer import PostSerializer
+from ..serializer.post_serializer import PostSerializer
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -19,10 +19,6 @@ from rest_framework.status import (
     HTTP_403_FORBIDDEN
 )
 
-TTL = settings.DEFAULT_CACHE_TIMEOUT
-
-
-# @cache_page(TTL)
 class HomeView(LoginRequiredMixin, ListAPIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
@@ -38,6 +34,7 @@ class HomeView(LoginRequiredMixin, ListAPIView):
             print(following)
             # posts = posts | following.user_id_set
 
+        print("here is :", posts)
         return posts.order_by("created_at")
     
 
