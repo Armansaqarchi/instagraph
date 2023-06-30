@@ -8,18 +8,20 @@ from ..api.serializer import (
     FollowingSerializer,
     FollowerSerializer
 )
+from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from ..models import Follows
+from ..models import Follows, FollowRQ
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 from ..models import Account
 from rest_framework.response import Response
 import logging
-from ..api.serializer import FollowingSerializer
+from ..api.serializer import FollowingSerializer, FollowRequestSerializer
+from django.shortcuts import get_object_or_404
 from rest_framework.status import(
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK,
@@ -85,7 +87,7 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
 
 
             return Response({"page_obj" : serializer.data, "followers_number" : followers_count, "status" : "success"}, status=HTTP_200_OK)
-        except PermissionDenied:
+        except PermissionDenied as e:
             return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
         except Exception as e:
             return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
@@ -128,14 +130,11 @@ class FollowingList(LoginRequiredMixin, ListAPIView):
         
 
     
-class FollowRQ(LoginRequiredMixin, APIView):
+class FriendFollowRQ(LoginRequiredMixin, APIView):
         
 
     def get(self, request, following_id) -> Response:
 
-        
-        if(following_id == request.user.account.id):
-            return Response({"message" : "cannot follow yourself", "status" : "error"}, status=HTTP_400_BAD_REQUEST)
 
         following_user = Account.objects.filter(id = following_id).first()
 
@@ -147,19 +146,22 @@ class FollowRQ(LoginRequiredMixin, APIView):
             message = f"user {following_user.id} is already being followed"
             return Response({"message" : message, "status" : "false"}, status=HTTP_403_FORBIDDEN)
 
-        acc = request.user.account
-        is_following = acc.follower_set.filter(following = following_id)
+        sender = request.user.account
+        is_following = sender.follower_set.filter(following = following_id)
 
         if is_following:
             message = f"user {following_user.id} is already being followed"
             return Response({"message" : message, "status" : "error"}, status=HTTP_208_ALREADY_REPORTED)
         try:
+
+            recipient = get_object_or_404(Account, id = following_id)
+
             if following_user.is_private:
                 FollowRQ.objects.create(
-                    sender = request.user.account.id,
-                    recipient = following_id,
+                    sender = sender,
+                    recipient = recipient,
                     is_read = False,
-                    acceepted = False
+                    accepted = False
                 )
 
                 logger.info("sent friendly request to user : %s".format(following_user.user.username))
@@ -184,25 +186,26 @@ class AcceptRQ(LoginRequiredMixin, APIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
 
-
+    
     def get(self, request, RQ_id) -> Response:
         """
         given RQ_id, accepts the friend reqeust corresponding to the RQ_id
         """
         is_requested = FollowRQ.objects.filter(id = RQ_id).first()
        
-
         if is_requested is not None:
 
             has_followed = Follows.objects.filter(Q(follower = is_requested.sender) & Q(following = is_requested.recipient)).exists()
             if not has_followed:
-                follower_user = is_requested.sender
-                following_user = is_requested.recipient
-                Follows.objects.get_or_create(
-                    follower = follower_user,
-                    following = following_user
-                )
-                return Response({"message" : f"accepted {follower_user} request"}, status=HTTP_200_OK)
+                with transaction.atomic():
+                    follower_user = is_requested.sender
+                    following_user = is_requested.recipient
+                    Follows.objects.get_or_create(
+                        follower = follower_user,
+                        following = following_user
+                    )
+                    is_requested.delete()
+                return Response({"message" : f"accepted {follower_user} request", "status" : "success"}, status=HTTP_200_OK)
 
             return Response({"message" : "sender is already following you", "status" : "error"}, status=HTTP_403_FORBIDDEN)
         
@@ -210,6 +213,7 @@ class AcceptRQ(LoginRequiredMixin, APIView):
     
 
 class RQList(LoginRequiredMixin, ListAPIView):
+    permission_classes = [OwnerPermission]
     paginate_by = 20
     login_url = settings.LOGIN_REDIRECT_URL
 
@@ -218,6 +222,11 @@ class RQList(LoginRequiredMixin, ListAPIView):
         """
         returns list of friend requset
         """
-        RQ_list = FollowRQ.objects.filter(id = id)
+        try:
+            RQ_list = FollowRQ.objects.filter(recipient = id)
+            serialized = FollowRequestSerializer(RQ_list, many = True)
 
+            return Response({"message" : "requests are retrieved successfully", "status" : "success", "requests" : serialized.data}, status = HTTP_200_OK)
+        except ValueError:
+            return Response({"status" : "error"}, status = HTTP_400_BAD_REQUEST)
 
