@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from ..models import Activation
 from django.http import Http404
 from django.conf import settings
+from django.db import transaction
 from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
     AccountSerializer,
@@ -161,18 +162,18 @@ class SignUpView(APIView):
 
         try:
             if user.is_valid(raise_exception=True):
-
                 instance = user.save()
                 # this feature is temporarily false due to problem with sending email
                 if settings.ENABLE_USER_ACTIVATION:
-                    act = Activation.objects.create(
-                        user = instance,
-                        code = digit_random6(),
-                        email = user.validated_data['email']
-                    )
-                    signup_verification(subject = "verification", message =  "message", email = act.email)
-                    return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
-                                      "status" : "success"}, status=HTTP_200_OK)
+                    with transaction.atomic():
+                        act = Activation.objects.create(
+                            user = instance,
+                            code = digit_random6(),
+                            email = user.validated_data['email']
+                        )
+                        signup_verification(subject = "verification", message =  "message", email = act.email)
+                        return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
+                                        "status" : "success"}, status=HTTP_200_OK)
                 else:
                     authenticate(request=request)
                     logger.info(f"a new user signed up : %s".format(request.user.id))

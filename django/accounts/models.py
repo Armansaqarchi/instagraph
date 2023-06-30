@@ -63,7 +63,7 @@ class FollowRQ(models.Model):
     sent_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return self.sender + "->" + self.recipient
+        return self.sender.user.username + "->" + self.recipient.user.username
     
     class Meta:
         db_table = "follow_requests"

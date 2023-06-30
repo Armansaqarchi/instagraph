@@ -5,7 +5,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.validators import ValidationError
 from collections import OrderedDict
 from rest_framework.fields import SkipField
-import base64
+from ..models import FollowRQ
 from django.shortcuts import get_object_or_404
 from os import path
 from django.conf import settings
@@ -158,7 +158,13 @@ class FollowingSerializer(Serializer):
     def get_following_image(self, obj):
         return obj.image_set.first().profile_image.url
 
-        
+class FollowRequestSerializer(ModelSerializer):
+
+    class Meta:
+        model = FollowRQ
+        fields = "__all__"
+
+
 
 class EmailExistsException(ValidationError):
     pass
