@@ -22,7 +22,7 @@ class Account(models.Model):
     is_private = models.BooleanField(default=False)
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
-    last_seen_posts = models.DateTimeField(default = None,null=True)
+    last_seen_posts = models.DateTimeField(auto_now_add=True, editable=True)
 
     class Meta:
         ordering = ['date_of_birth']
@@ -75,7 +75,7 @@ class FollowRQ(models.Model):
 
 class Story(models.Model):
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE) 
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_stories") 
     content_url = models.URLField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(auto_now_add=True)        
