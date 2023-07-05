@@ -70,7 +70,7 @@ class UserCreationSerializer(Serializer):
 
     class Meta:
         
-        fields = ["first_name", "username", "email", "password1", "password2", "date_of_birth", "bio"]
+        fields = ["first_name", "username", "email", "password2", "date_of_birth", "bio"]
 
     def validate(self, attrs):
 

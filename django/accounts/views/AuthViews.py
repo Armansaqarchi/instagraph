@@ -153,7 +153,7 @@ class LoginView(NotAuthenticatedView):
 
 
     
-class SignUpView(APIView):
+class SignUpView(NotAuthenticatedView):
     permission_classes = [AllowAny]
 
     def post(self, request) -> Response:
@@ -163,7 +163,7 @@ class SignUpView(APIView):
         try:
             if user.is_valid(raise_exception=True):
                 instance = user.save()
-                # this feature is temporarily false due to problem with sending email
+                # this feature is temporarily false due to problem with sending emails
                 if settings.ENABLE_USER_ACTIVATION:
                     with transaction.atomic():
                         act = Activation.objects.create(
