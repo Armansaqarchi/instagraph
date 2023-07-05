@@ -84,7 +84,7 @@ class Story(models.Model):
     class Meta:
         db_table = 'stories'
 
-    def __Str__(self):
+    def __str__(self):
         return self.user_id.username
 
 
@@ -120,3 +120,15 @@ class MediaProfile(models.Model):
     class Meta:
         db_table = "profile"
         ordering = ['set_at']
+
+
+class MediaStory(models.Model):
+    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
+    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="story_set")
+    story_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_STORY, null=True, upload_to=settings.STORY_UPLOAD_DIR)
+    added_at = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = "story_image"
+        ordering = ['added_at']
+    

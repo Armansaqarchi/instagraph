@@ -239,6 +239,10 @@ USER_DEFAULT_PROFILE = "static/images/users/profile/default.png"
 
 PROFILE_UPLOAD_DIR = "static/images/users/"
 
+STORY_UPLOAD_DIR = "static/images/users/story/default.png"
+
+USER_DEFAULT_STORY = "static/images/stories"
+
 DEFAULT_POST_DIR = "static/images/posts"
 
 # Static files (CSS, JavaScript, Images)

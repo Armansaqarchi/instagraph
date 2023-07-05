@@ -8,9 +8,8 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST
 )
 
-
 @api_view(['GET'])
-def get_post_image(request):
+def async_post_get(request):
     try:
         num = int(request.GET.get("slide"))
         post_id = int(request.GET.get("id"))
@@ -23,6 +22,7 @@ def get_post_image(request):
         return Response({"message" : str(e)}, status=HTTP_400_BAD_REQUEST)
     except FileNotFoundError as e:
         return Response({"message" : "something went wrong while getting the image"}, status=HTTP_404_NOT_FOUND)
+
 
 
 

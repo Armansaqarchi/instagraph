@@ -31,11 +31,16 @@ class HomeView(LoginRequiredMixin, ListAPIView):
     def get_posts(self, request, followings : list):
         posts = QuerySet(model=Post)
         for following in followings:
-            print(following)
-            # posts = posts | following.user_id_set
+            print(following.user_posts)
+            posts = posts | following.user_posts
 
-        print("here is :", posts)
         return posts.order_by("created_at")
+    
+    # def get_stories(self, request, followings : list):
+    #     stories = QuerySet()
+    #     for following in followings:
+
+
     
 
     def get_paginator(self, request, posts):
@@ -54,8 +59,8 @@ class HomeView(LoginRequiredMixin, ListAPIView):
 
     def get(self, request):
         account = request.user.account
-        # getting the 'follows' instance in which the user is follower
         following_set = account.follower_set.values_list('following', flat = True)
+        
         posts = self.get_posts(request, followings=following_set)
         new_posts = self.get_paginator(request, posts)
 
