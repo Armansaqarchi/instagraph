@@ -13,7 +13,7 @@ def async_post_get(request):
     try:
         num = int(request.GET.get("slide"))
         post_id = request.GET.get("id")
-        media_post = MediaPost.objects.filter(Q(post_id = post_id) | Q(page_num = num)).first()
+        media_post = MediaPost.objects.filter(Q(post_id = post_id) & Q(page_num = num)).first()
         if media_post is None:
             return Response({"message" : "no image found", "status" : "error"}, status=HTTP_404_NOT_FOUND)
         image_file = open(media_post.content_url.path, 'rb')
