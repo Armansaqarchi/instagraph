@@ -22,7 +22,7 @@ class Account(models.Model):
     is_private = models.BooleanField(default=False)
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
-    last_seen_posts = models.DateTimeField(auto_now_add=True, editable=True)
+    last_seen_posts = models.DateField(auto_now_add=True, null=False)
 
     class Meta:
         ordering = ['date_of_birth']
@@ -76,7 +76,7 @@ class FollowRQ(models.Model):
 class Story(models.Model):
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_stories") 
-    content_url = models.URLField(max_length=200)
+    content_url = models.ImageField(max_length=200, default = settings.USER_DEFAULT_STORY, upload_to=settings.STORY_UPLOAD_DIR)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(auto_now_add=True)        
 
@@ -122,13 +122,4 @@ class MediaProfile(models.Model):
         ordering = ['set_at']
 
 
-class MediaStory(models.Model):
-    id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="story_set")
-    story_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_STORY, null=True, upload_to=settings.STORY_UPLOAD_DIR)
-    added_at = models.DateField(auto_now_add=True)
-
-    class Meta:
-        db_table = "story_image"
-        ordering = ['added_at']
     
