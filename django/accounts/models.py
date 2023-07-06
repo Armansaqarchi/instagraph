@@ -1,8 +1,10 @@
-from typing import Iterable, Optional
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import User
+
 
 # Create your models here.
 
@@ -86,14 +88,37 @@ class Story(models.Model):
 
     def __str__(self):
         return self.user_id.username
+    
 
+class Group(models.Model):
+
+    group_id = models.UUIDField(default=uuid4, null=False, primary_key=True, editable=True, unique=True)
+    @property
+    def get_messages(self):
+        try:
+            return Message.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
+        except Message.DoesNotExist:
+            return None
 
 class Message(models.Model):
     message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-    recipient_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="recipient_set")
+
+    recipient_type = models.ForeignKey(ContentType, on_delete= models.CASCADE, related_name= "recipient_set",
+                                        limit_choices_to= {"model_in" : (Account, Group)})
+    recipient_id = models.PositiveBigIntegerField()
+    recipient = GenericForeignKey(recipient_type, recipient_id)
+
+    is_read = models.BooleanField()
     content = models.TextField(max_length=600)
     sent_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        indexes = [
+            models.Index(fields= ['recipient_id', 'recipient_type']),
+            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type'])
+        ]
 
 
     def __str__(self):
@@ -122,4 +147,3 @@ class MediaProfile(models.Model):
         ordering = ['set_at']
 
 
-    
