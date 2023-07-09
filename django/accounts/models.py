@@ -99,6 +99,7 @@ class Group(models.Model):
             return Message.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
         except Message.DoesNotExist:
             return None
+        
 
 class Message(models.Model):
     message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
@@ -117,7 +118,8 @@ class Message(models.Model):
     class Meta:
         indexes = [
             models.Index(fields= ['recipient_id', 'recipient_type']),
-            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type'])
+            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type']),
+            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type', 'sent_at'])
         ]
 
 
