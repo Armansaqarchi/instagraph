@@ -96,12 +96,12 @@ class Group(models.Model):
     @property
     def get_messages(self):
         try:
-            return Message.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
-        except Message.DoesNotExist:
+            return BaseMessage.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
+        except BaseMessage.DoesNotExist:
             return None
         
 
-class Message(models.Model):
+class BaseMessage(models.Model):
     message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
 
@@ -126,6 +126,11 @@ class Message(models.Model):
     def __str__(self):
         return self.sender_id.username + " " + self.recipient_id.username
     
+class TextMessage(models.Model):
+    pass
+
+class PostMessage(models.Model):
+    pass
 
 
 class Activation(models.Model):
