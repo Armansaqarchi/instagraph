@@ -4,7 +4,7 @@ from django.db import models
 from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import User
-
+from posts.models import Post
 
 # Create your models here.
 
@@ -96,41 +96,45 @@ class Group(models.Model):
     @property
     def get_messages(self):
         try:
-            return BaseMessage.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
-        except BaseMessage.DoesNotExist:
+            return TextMessage.objects.filter(content_type= Group, object_id= self.group_id).order_by('created_at')
+        except TextMessage.DoesNotExist:
             return None
         
 
+Message_type = (
+    "POST_MESSAGE",
+    "CONTENT_MESSAGE"
+)
+
 class BaseMessage(models.Model):
-    message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
-    sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-
-    recipient_type = models.ForeignKey(ContentType, on_delete= models.CASCADE, related_name= "recipient_set",
-                                        limit_choices_to= {"model_in" : (Account, Group)})
-    recipient_id = models.PositiveBigIntegerField()
-    recipient = GenericForeignKey(recipient_type, recipient_id)
-
+    message_id = models.AutoField(null=False, editable=False, primary_key=True)
+    message_type = models.CharField(choices=Message_type)
     is_read = models.BooleanField()
-    content = models.TextField(max_length=600)
+    sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete= models.CASCADE, related_name= "recipient_set",
+                                        limit_choices_to= {"model_in" : (Account, Group)})
     sent_at = models.DateTimeField(auto_now_add=True)
-
-
+    object_id = models.PositiveIntegerField()
+    recipient = GenericForeignKey('content_type', 'object_id')
     class Meta:
         indexes = [
-            models.Index(fields= ['recipient_id', 'recipient_type']),
-            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type']),
-            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type', 'sent_at'])
+            models.Index(fields= ['object_id', 'content_type']),
+            models.Index(fields= ['sender_id', 'object_id', 'content_type']),
+            models.Index(fields= ['sender_id', 'object_id', 'content_type', 'sent_at'])
         ]
+
+    
+class TextMessage(models.Model):
+    message_id = models.OneToOneField(BaseMessage, on_delete=models.CASCADE)
+    content = models.TextField(max_length=600)
 
 
     def __str__(self):
         return self.sender_id.username + " " + self.recipient_id.username
-    
-class TextMessage(models.Model):
-    pass
 
 class PostMessage(models.Model):
-    pass
+    message_id = models.OneToOneField(BaseMessage, on_delete=models.CASCADE)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
 
 
 class Activation(models.Model):
