@@ -52,7 +52,7 @@ class OwnerPermission(BasePermission):
 
 class FollowersView(LoginRequiredMixin, ListAPIView):
 
-    # permission_classes = [IsFollowerPermission]
+    permission_classes = [IsFollowerPermission]
     login_url = "accounts/login"
     paginate_by = 20
 
