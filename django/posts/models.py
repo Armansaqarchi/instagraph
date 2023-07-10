@@ -3,7 +3,6 @@ from uuid import uuid4
 from accounts.models import Account
 from django.conf import settings
 
-
 class Post(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="user_posts")
@@ -16,7 +15,6 @@ class Post(models.Model):
         db_table = 'posts'
         ordering = ['created_at']
 
-
 class Like(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -26,8 +24,6 @@ class Like(models.Model):
     class Meta:
         db_table = 'likes'
         ordering = ['like_at']
-
-
 
 
 class Comment(models.Model):
@@ -40,9 +36,6 @@ class Comment(models.Model):
 
     class Meta:
         db_table = 'comments'
-
-
-
 
 
 class MediaPost(models.Model):

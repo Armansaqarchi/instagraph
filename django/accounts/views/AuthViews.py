@@ -143,8 +143,10 @@ class LoginView(NotAuthenticatedView):
             
             else: url_is_safe = None
 
+            referesh_token = user.account.token
 
-            return Response({"message" : message, "status" : "success"}, HTTP_200_OK)
+            return Response({"message" : message, "status" : "success", "refresh" : str(referesh_token),
+                             "access_token" : str(referesh_token.access_token)}, HTTP_200_OK)
         else:
             logger.info(f"failed to authenticate user %s".format(request.user.id))
             message = "failed to authenticate user"
@@ -155,7 +157,6 @@ class LoginView(NotAuthenticatedView):
     
 class SignUpView(NotAuthenticatedView):
     permission_classes = [AllowAny]
-
     def post(self, request) -> Response:
         
         user = UserCreationSerializer(data=request.data)
@@ -175,9 +176,14 @@ class SignUpView(NotAuthenticatedView):
                         return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
                                         "status" : "success"}, status=HTTP_200_OK)
                 else:
-                    authenticate(request=request)
+                    user = authenticate(request=request)
+                    refresh_token = user.account.token
+
                     logger.info(f"a new user signed up : %s".format(request.user.id))
-                    return Response({"status" : "success", "message" : "user created"}, HTTP_201_CREATED)
+
+                    return Response({"status" : "success", "message" : "user created",
+                                      "refresh" : str(refresh_token), "access_token" : str(refresh_token.access_token)},
+                                        HTTP_201_CREATED)
             
         except ValidationError:
             return Response({"status": "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
