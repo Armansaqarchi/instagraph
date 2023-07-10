@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
     'posts.apps.PostsConfig',
+    'chat.apps.ChatConfig',
     'rest_framework',
     'django_crontab'
 ]
@@ -209,7 +210,7 @@ REST_FRAMEWORK = {
     )
 }
 
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 
 EMAIL_USE_TLS = True
@@ -252,7 +253,7 @@ STATIC_URL = 'static/'
 
 LOGIN_URL = '/accounts/login'
 
-LOGIN_REDIRECT_URL = '/home'
+LOGIN_REDIRECT_URL = 'home'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
