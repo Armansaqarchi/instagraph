@@ -4,6 +4,8 @@ from django.db import models
 from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime, timedelta
 
 
 # Create your models here.
@@ -25,6 +27,11 @@ class Account(models.Model):
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
     last_seen_posts = models.DateField(auto_now_add=True, null=False)
+
+
+    @property
+    def token(self):
+        return RefreshToken.for_user(self.user)
 
     class Meta:
         ordering = ['date_of_birth']
@@ -89,49 +96,6 @@ class Story(models.Model):
     def __str__(self):
         return self.user_id.username
     
-
-class Group(models.Model):
-
-    group_id = models.UUIDField(default=uuid4, null=False, primary_key=True, editable=True, unique=True)
-    @property
-    def get_messages(self):
-        try:
-            return BaseMessage.objects.filter(recipient_type= Group, recipient_id= self.group_id).order_by('created_at')
-        except BaseMessage.DoesNotExist:
-            return None
-        
-
-class BaseMessage(models.Model):
-    message_id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
-    sender_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-
-    recipient_type = models.ForeignKey(ContentType, on_delete= models.CASCADE, related_name= "recipient_set",
-                                        limit_choices_to= {"model_in" : (Account, Group)})
-    recipient_id = models.PositiveBigIntegerField()
-    recipient = GenericForeignKey(recipient_type, recipient_id)
-
-    is_read = models.BooleanField()
-    content = models.TextField(max_length=600)
-    sent_at = models.DateTimeField(auto_now_add=True)
-
-
-    class Meta:
-        indexes = [
-            models.Index(fields= ['recipient_id', 'recipient_type']),
-            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type']),
-            models.Index(fields= ['sender_id', 'recipient_id', 'recipient_type', 'sent_at'])
-        ]
-
-
-    def __str__(self):
-        return self.sender_id.username + " " + self.recipient_id.username
-    
-class TextMessage(models.Model):
-    pass
-
-class PostMessage(models.Model):
-    pass
-
 
 class Activation(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)

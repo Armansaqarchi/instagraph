@@ -6,7 +6,7 @@ from rest_framework.validators import ValidationError
 from collections import OrderedDict
 from rest_framework.fields import SkipField
 from ..models import FollowRQ
-from ..models import Message
+from chat.models import BaseMessage
 from django.shortcuts import get_object_or_404
 from os import path
 from django.conf import settings
@@ -168,7 +168,7 @@ class FollowRequestSerializer(ModelSerializer):
 class MessageSerializer(ModelSerializer):
 
     class Meta:
-        model = Message
+        model = BaseMessage
         fields = "__all__"
 
 class EmailExistsException(ValidationError):
