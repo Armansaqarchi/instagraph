@@ -8,9 +8,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime, timedelta
 
 
-# Create your models here.
-
-
 FR_STATUS = (
     ("True", "YES"),
     ("False", "NO"),
