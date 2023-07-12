@@ -1,6 +1,8 @@
+from typing import Any
+from django import http
 from accounts.models import Story 
 from django.http.response import HttpResponse
-from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.views.FollowViews import OwnerPermission
 from datetime import datetime
@@ -17,12 +19,16 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
     HTTP_403_FORBIDDEN
 )
-
-class HomeView(LoginRequiredMixin, ListAPIView):
+import traceback
+class HomeView(LoginRequiredMixin, APIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
+    
     post_paginate_by = 10
     story_paginate_by = 5
+    
+
+
 
     def get_posts(self, request, followings : list):
         posts = QuerySet(model=Post)

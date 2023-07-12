@@ -1,7 +1,7 @@
 import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.mixins import LoginRequiredMixin
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from ..models import Account
 from rest_framework.response import Response
@@ -49,10 +49,11 @@ class NotAuthenticatedView(APIView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class SingleProfileView(LoginRequiredMixin, GenericAPIView):
+class SingleProfileView(GenericAPIView):
 
     model = Account
     login_url = "accounts/login"
+    permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
     def has_object_permission(self, request, obj):
@@ -108,19 +109,17 @@ class LoginView(NotAuthenticatedView):
     but since passowrd would better not shown in logs, it would better to treat as sensitive arg
     """
 
-    
     permission_classes = [AllowAny]
-
-    # no method 'get' since it will be handled from client side
     
     def post(self, request) -> Response:
 
-        
-        username = request.data["username"]
-        password = request.data["password"]
-
-
-        user = authenticate(username = username, password = password)
+        try:
+            username = request.data["username"]
+            password = request.data["password"]
+        except KeyError:
+            user = authenticate(request=request)
+        else:
+            user = authenticate(username = username, password = password)
 
         if user is not None:
             

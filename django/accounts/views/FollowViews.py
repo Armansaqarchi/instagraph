@@ -8,6 +8,7 @@ from ..api.serializer import (
     FollowingSerializer,
     FollowerSerializer
 )
+from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
@@ -50,7 +51,7 @@ class OwnerPermission(BasePermission):
 
 
 
-class FollowersView(LoginRequiredMixin, ListAPIView):
+class FollowersView(ListAPIView):
 
     permission_classes = [IsFollowerPermission]
     login_url = "accounts/login"
@@ -93,12 +94,14 @@ class FollowersView(LoginRequiredMixin, ListAPIView):
             return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
 
 
-class FollowingList(LoginRequiredMixin, ListAPIView):
+class FollowingList(ListAPIView):
 
     permission_classes = [IsFollowerPermission]
     paginate_by = 20
     login_url = settings.LOGIN_REDIRECT_URL
 
+    def dispatch(self, request, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().dispatch(request, *args, **kwargs)
 
     def get_page(self, request, object_list):
         try:
@@ -132,6 +135,8 @@ class FollowingList(LoginRequiredMixin, ListAPIView):
     
 class FriendFollowRQ(LoginRequiredMixin, APIView):
         
+
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, following_id) -> Response:
 
