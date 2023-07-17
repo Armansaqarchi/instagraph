@@ -15,11 +15,8 @@ from django.views.decorators.cache import cache_page
 from ..serializer.Homeserializer import PostSerializer, StorySerializer
 from rest_framework.status import (
     HTTP_200_OK,
-    HTTP_201_CREATED,
-    HTTP_404_NOT_FOUND,
-    HTTP_403_FORBIDDEN
 )
-import traceback
+from accounts.exceptions.Exceptions import *
 class HomeView(LoginRequiredMixin, APIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
@@ -56,8 +53,8 @@ class HomeView(LoginRequiredMixin, APIView):
                 pagiante_by = 5
 
             paginator = Paginator(items, pagiante_by)
-        except (PageNotAnInteger,EmptyPage):
-            page_num = 1
+        except PageNotAnInteger:
+            raise BadRequestException("Page id must be an integer")
 
 
         items = paginator.get_page(page_num)

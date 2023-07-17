@@ -37,7 +37,6 @@ class Comment(models.Model):
     class Meta:
         db_table = 'comments'
 
-
 class MediaPost(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     post_id = models.ForeignKey(Post, on_delete=models.CASCADE)

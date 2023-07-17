@@ -6,6 +6,7 @@ from rest_framework.permissions import BasePermission
 from django.db.models import Q
 from rest_framework.decorators import permission_classes
 from ..models import MediaPost
+from accounts.exceptions.Exceptions import *
 from accounts.models import Account
 from rest_framework.status import (
     HTTP_404_NOT_FOUND,
@@ -39,9 +40,9 @@ class AsyncPostGet(LoginRequiredMixin, APIView):
             image_file = open(media_post.content_url.path, 'rb')
             return FileResponse(image_file, content_type = "image/jpeg")
         except ValueError as e:
-            return Response({"message" : str(e)}, status=HTTP_400_BAD_REQUEST)
+            raise BadRequestException(str(e))
         except FileNotFoundError as e:
-            return Response({"message" : "something went wrong while getting the image"}, status=HTTP_404_NOT_FOUND)
+            return NotFoundException("No such file or stream found")
 
 
 

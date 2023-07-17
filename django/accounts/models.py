@@ -104,9 +104,10 @@ class Activation(models.Model):
         db_table = "Activation"
         ordering = ['created_at']
 
+
 class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="image_set")
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="profile_images")
     profile_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_PROFILE , null=True, upload_to=settings.PROFILE_UPLOAD_DIR)
     set_at = models.DateField(auto_now_add=True)
 
