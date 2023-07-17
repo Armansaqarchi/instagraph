@@ -7,6 +7,7 @@ from collections import OrderedDict
 from rest_framework.fields import SkipField
 from ..models import FollowRQ
 from chat.models import BaseMessage
+from accounts.models import MediaProfile
 from django.shortcuts import get_object_or_404
 from os import path
 from django.conf import settings
@@ -37,7 +38,6 @@ class AccountSerializer(ModelSerializer):
     
         ret = OrderedDict()
 
-
         ret["first_name"] = instance.user.first_name
         ret["last_name"] = instance.user.last_name
 
@@ -60,7 +60,44 @@ class AccountSerializer(ModelSerializer):
         return ret
         
 
+class ProfileSerializer(Serializer):
+    profile_picture = serializers.SerializerMethodField()
+    firstname = serializers.SerializerMethodField()
+    lastname = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+    bio = serializers.CharField()
+    followers = serializers.SerializerMethodField()
+    followings = serializers.SerializerMethodField()
+    posts = serializers.SerializerMethodField()
 
+
+    def get_profile_picture(self, object):
+        try:
+            query = "SELECT * FROM profile WHERE user_id = %s ORDER BY set_at DESC" %object.user.id
+            serialized_profile =  MediaProfileSerializer(MediaProfile.objects.raw(query)[0])
+            return serialized_profile.data
+        except TypeError:
+            return None
+    def get_firstname(self, object):
+
+        return object.user.first_name
+    def get_lastname(self, object):
+        return object.user.last_name
+    def get_username(self, object):
+        return object.user.username
+    def get_followers(self, object):
+        return object.following_set.count()
+    def get_followings(self, object):
+        return object.follower_set.count()
+    def get_posts(self, object):
+        return object.user_posts.count()
+
+
+class MediaProfileSerializer(ModelSerializer):
+
+    class Meta:
+        model = MediaProfile
+        fields = "__all__"
 
 class UserCreationSerializer(Serializer):
     first_name = serializers.CharField()

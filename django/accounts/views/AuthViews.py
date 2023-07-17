@@ -19,6 +19,7 @@ from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
     AccountSerializer,
     UserCreationSerializer,
+    ProfileSerializer,
     EmailExistsException,
     UsernameExistsException
 )
@@ -34,6 +35,7 @@ from rest_framework.status import(
     HTTP_400_BAD_REQUEST,
     HTTP_409_CONFLICT,
 )
+from ..exceptions.Exceptions import *
 
 
 logger = logging.getLogger(__name__)
@@ -88,17 +90,16 @@ class SingleProfileView(GenericAPIView):
             is_allowed, message = self.has_object_permission(request, obj=account)
             if is_allowed:
                 
-                serializer = AccountSerializer(account)
+                serializer = ProfileSerializer(account)
                 #sending json response containing the Account info, use 'Account' to access it
                 # logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.data.get("username")))
                 return Response({"Account" : serializer.data, "Message" : message}, status=HTTP_200_OK)
             else:
-                return Response ({"message": "You are refused to access this page", "status": "error"}, status=HTTP_401_UNAUTHORIZED)
-        except Account.DoesNotExist:
-            return Response({"message" : "page not found"}, status=HTTP_404_NOT_FOUND)
-        except Http404:
-            return Response({"message" : f"no user id {pk} found", "status" : "error"}, HTTP_404_NOT_FOUND)
-    
+                raise UnauthorizedException("You are refused to access this page")
+        except (Account.DoesNotExist, Http404):
+            raise NotFoundException("Account id %s does not exist", self.kwargs.get("pk"))
+        except IndexError:
+            raise BadRequestException("400 BAD REQUEST")
 
 
     
@@ -148,8 +149,8 @@ class LoginView(NotAuthenticatedView):
                              "access_token" : str(referesh_token.access_token)}, HTTP_200_OK)
         else:
             logger.info(f"failed to authenticate user %s".format(request.user.id))
-            message = "failed to authenticate user"
-            return Response({"message" : message, "status" : "error"}, HTTP_401_UNAUTHORIZED)
+
+            raise UnauthorizedException("Username or password may be incorrect")
            
 
 
@@ -185,11 +186,11 @@ class SignUpView(NotAuthenticatedView):
                                         HTTP_201_CREATED)
             
         except ValidationError:
-            return Response({"status": "error", "errors" : user.errors}, status=HTTP_400_BAD_REQUEST)
+            raise BadRequestException("Bad or incorrect informations")
         except EmailExistsException:
-            return Response({"message": "email is already taken, try a different email", "status": "error"}, status=HTTP_409_CONFLICT)
+            raise AlreadyExistsException("The Email is already taken by another user")
         except UsernameExistsException:
-            return Response({"message": "username is already taken, try a different username", "status": "error"}, status=HTTP_409_CONFLICT)
+            raise AlreadyExistsException("The username is already taken by another user")
         
 
 class Activate(APIView):
@@ -208,7 +209,7 @@ class Activate(APIView):
             authenticate(username = user.username, password = user.password)
             login(request=request, user=user)
             return Response({"message" : "logged in successfully", "status" : "success"}, status=HTTP_200_OK)
-        return Response({"message" : "failed to varify code", "status" : "error"}, status=HTTP_401_UNAUTHORIZED)
+        raise UnauthorizedException("something went wrong while verifying the code, try again")
 
 
 

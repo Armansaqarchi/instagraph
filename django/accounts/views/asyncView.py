@@ -4,6 +4,7 @@ from django.http import FileResponse
 from django.conf import settings
 from rest_framework.response import Response
 from django.db.models import Q
+from ..exceptions.Exceptions import *
 from rest_framework.status import (
      HTTP_400_BAD_REQUEST,
      HTTP_200_OK,
@@ -32,6 +33,6 @@ def async_story_get(request):
         image_file = open(media_story.story_image.path, 'rb')
         return FileResponse(image_file, content_type = "image/jpeg")
     except ValueError as e:
-            return Response({"message" : str(e)}, status=HTTP_400_BAD_REQUEST)
+            raise BadRequestException(str(e))
     except FileNotFoundError as e:
-        return Response({"message" : "something went wrong while getting the image"}, status=HTTP_404_NOT_FOUND)
+        raise NotFoundException("No such file or stream found")

@@ -32,7 +32,7 @@ from rest_framework.status import(
 import traceback
 from django.conf import settings
 from rest_framework.request import Request
-
+from ..exceptions.Exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +69,10 @@ class FollowersView(ListAPIView):
             paginator = Paginator(items, self.paginate_by)
             #getting page num from url params
             page_num = request.GET["page"]
-        except (PageNotAnInteger, EmptyPage):
-            page_num = 1
+        except PageNotAnInteger:
+            raise BadRequestException("Page number must be an integer")
+        except EmptyPage:
+            raise BadRequestException("The page number exceedes maximum number")
 
         page_obj = paginator.get_page(page_num)
         return page_obj
@@ -89,8 +91,9 @@ class FollowersView(ListAPIView):
 
             return Response({"page_obj" : serializer.data, "followers_number" : followers_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied as e:
-            return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+            raise ForibiddenException("Access denied")
         except Exception as e:
+            # needes something more accurate
             return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
 
 
@@ -127,8 +130,9 @@ class FollowingList(ListAPIView):
 
             return Response({"page_obj" : serializer.data, "followings_number" : following_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied:
-            return Response({"message" : "access denied", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+            raise ForibiddenException("Access denied to reach this page")
         except Exception as e:
+            # needs something more accurate
             return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
         
 
@@ -141,35 +145,33 @@ class FriendFollowRQ(LoginRequiredMixin, APIView):
     def get(self, request, following_id) -> Response:
 
 
-        following_user = Account.objects.filter(id = following_id).first()
+        to_user = Account.objects.filter(id = following_id).first()
 
-        if following_user is None:
-            return Response({"message" : f"no user id : {following_id}"}, status=HTTP_400_BAD_REQUEST)
+        if to_user is None:
+            raise NotFoundException("user id %s does not exists" %id)
         
-        has_requested = following_user.received_set.filter(sender = request.user.account.id).exists()
+        has_requested = to_user.received_set.filter(sender = request.user.account.id).exists()
         if has_requested:
-            message = f"user {following_user.id} is already being followed"
-            return Response({"message" : message, "status" : "false"}, status=HTTP_403_FORBIDDEN)
+            raise AlreadyExistsException("you have already sent follow request to user %s" %to_user.user.username)
 
         sender = request.user.account
         is_following = sender.follower_set.filter(following = following_id)
 
         if is_following:
-            message = f"user {following_user.id} is already being followed"
-            return Response({"message" : message, "status" : "error"}, status=HTTP_208_ALREADY_REPORTED)
+            message = f"user {to_user.id} is already being followed"
+            raise AlreadyExistsException("You are already following user %s" %to_user.user.username)
         try:
 
-            recipient = get_object_or_404(Account, id = following_id)
-
-            if following_user.is_private:
+            if to_user.is_private:
                 FollowRQ.objects.create(
                     sender = sender,
-                    recipient = recipient,
+                    recipient = to_user,
                     is_read = False,
                     accepted = False
                 )
 
-                logger.info("sent friendly request to user : %s".format(following_user.user.username))
+                logger.info("sent friendly request to user : %s".format(to_user.user.username))
+
                 message = "successfully sent friendly request"
                 return Response({"message" : message, "status" : "success"}, status = HTTP_200_OK)
             else:
@@ -178,12 +180,11 @@ class FriendFollowRQ(LoginRequiredMixin, APIView):
                     follower = request.user.account,
                     following = following_acc
                 )
-                message = "strated following %s".format(following_user.user.username)
+                message = "strated following %s".format(to_user.user.username)
                 logger.info("user %s started following user %s".format(request.user.id, following_id))
                 return Response({'message' : message, 'status' : "success"}, status = HTTP_200_OK)
         except IntegrityError as e:
-            message = f"error has occured during the process : {e}"
-            return Response({"message" : message, "status" : "error"}, status=HTTP_400_BAD_REQUEST)
+            raise BadRequestException("Bad request", )
 
 class AcceptRQ(LoginRequiredMixin, APIView):
     
@@ -212,9 +213,9 @@ class AcceptRQ(LoginRequiredMixin, APIView):
                     is_requested.delete()
                 return Response({"message" : f"accepted {follower_user} request", "status" : "success"}, status=HTTP_200_OK)
 
-            return Response({"message" : "sender is already following you", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+            raise AlreadyExistsException("you are already following the user")
         
-        return Response({"message" : "no friend request with these details to accept", "status" : "error"}, status=HTTP_403_FORBIDDEN)
+        return BadRequestException("no such following request exists")
     
 
 class RQList(LoginRequiredMixin, ListAPIView):
@@ -233,5 +234,5 @@ class RQList(LoginRequiredMixin, ListAPIView):
 
             return Response({"message" : "requests are retrieved successfully", "status" : "success", "requests" : serialized.data}, status = HTTP_200_OK)
         except ValueError:
-            return Response({"status" : "error"}, status = HTTP_400_BAD_REQUEST)
+            raise BadRequestException("Bad or incorrect credentials")
 
