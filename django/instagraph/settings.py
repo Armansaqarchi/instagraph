@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-l6r1&_h=*io%8ejiomvu!fc@w6(g+5*imxts=g4*dp8m)7u8ag
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["0.0.0.0", "49.13.60.63"]
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20),
@@ -89,7 +89,6 @@ INSTALLED_APPS = [
     'chat.apps.ChatConfig',
     'rest_framework',
     'rest_framework_simplejwt',
-    'django_crontab'
 ]
 
 
@@ -139,21 +138,29 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'USER' : 'mahan',
+#         'PASSWORD' : 'test123123',
+#         "HOST" : "localhost",
+#         "PORT" : "5432",
+#         "NAME" : "postgres"
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'USER' : 'mahan',
-        'PASSWORD' : 'test123123',
-        "HOST" : "localhost",
-        "PORT" : "5432",
-        "NAME" : "postgres"
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase', # This is where you put the name of the db file. 
+                 # If one doesn't exist, it will be created at migration time.
     }
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": "redis://redis:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
         },
