@@ -137,7 +137,7 @@ class FollowingList(ListAPIView):
         
 
     
-class FriendFollowRQ(LoginRequiredMixin, APIView):
+class FriendFollowRQ(APIView):
         
 
     permission_classes = [IsAuthenticated]
@@ -186,7 +186,7 @@ class FriendFollowRQ(LoginRequiredMixin, APIView):
         except IntegrityError as e:
             raise BadRequestException("Bad request", )
 
-class AcceptRQ(LoginRequiredMixin, APIView):
+class AcceptRQ(APIView):
     
 
     permission_classes = [OwnerPermission]

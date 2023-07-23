@@ -17,15 +17,13 @@ from rest_framework.status import (
     HTTP_200_OK,
 )
 from accounts.exceptions.Exceptions import *
-class HomeView(LoginRequiredMixin, APIView):
+class HomeView(APIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
     
     post_paginate_by = 10
     story_paginate_by = 5
     
-
-
 
     def get_posts(self, request, followings : list):
         posts = QuerySet(model=Post)
