@@ -91,7 +91,7 @@ class Story(models.Model):
         db_table = 'stories'
 
     def __str__(self):
-        return self.user_id.username
+        return self.user_id.user.username
     
 
 class Activation(models.Model):
