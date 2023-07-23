@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  redis:
+    image: redis:6.0.9-alpine
+    ports:
+      - 7000:6379
+  backend:
+    image: armans8118/instagraph:latest
+    ports:
+      - 8000:8000
+    volumes:
+      - ./django:/app
