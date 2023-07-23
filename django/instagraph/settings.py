@@ -138,24 +138,24 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'USER' : 'mahan',
-        'PASSWORD' : 'test123123',
-        "HOST" : "localhost",
-        "PORT" : "5432",
-        "NAME" : "postgres"
-    }
-}
-
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': 'mydatabase', # This is where you put the name of the db file. 
-#                  # If one doesn't exist, it will be created at migration time.
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'USER' : 'mahan',
+#         'PASSWORD' : 'test123123',
+#         "HOST" : "localhost",
+#         "PORT" : "5432",
+#         "NAME" : "postgres"
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase', # This is where you put the name of the db file. 
+                 # If one doesn't exist, it will be created at migration time.
+    }
+}
 
 CACHES = {
     "default": {
