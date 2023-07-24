@@ -9,11 +9,13 @@ from accounts.exceptions.Exceptions import *
 import datetime
 
 
-class getChat(LoginRequiredMixin, APIView):
+class GetMessages(APIView):
     paginate_by = 80
-    login_url = settings.LOGIN_REDIRECT_URL
 
     def get(self, request):
+        """
+        used to get messages and paginating them for better performance
+        """
         try:
             message_page = request.GET.get("message_page")
             recipient = request.GET.get("recipient")
@@ -28,3 +30,16 @@ class getChat(LoginRequiredMixin, APIView):
         except KeyError as e:
             BadRequestException(str(e))
         
+class getChatList(APIView):
+    """
+    this api uses aggregation to get the chats based on last messages sent in them
+    SELECT recipient, max(sent_at) as latest_message FROM base_message GROUP BY recipient ORDER BY latest_message
+    """
+    paginate_by = 30
+
+
+    def get(self, request):
+        account = request.user.account
+        
+
+    
