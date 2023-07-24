@@ -14,37 +14,23 @@ MESSAGE_TYPE = (
 
 class Chat(models.Model):
     id = models.UUIDField(default= uuid4, null=False, primary_key=True, editable=True, unique=True)
-
-
+    members = models.ManyToManyField(Account)
+    @property
+    def latest_message(self):
+        return self.messages.last()
+    
 
 class Group(models.Model):
-
-    @property
-    def messages(self):
-        try:
-            return BaseMessage.objects.filter(content_type= Group, object_id= self.group_id).order_by('created_at')
-        except BaseMessage.DoesNotExist:
-            return None
-        
-    
-class PrivateChat(models.Model):
     chat = models.OneToOneField(Chat, on_delete=models.CASCADE)
-    @property
-    def messages(self):
-        try:
-            return BaseMessage.objects.filter(ContentType= PrivateChat, object_id= self.chat.id).order_by("created_at")
-        except BaseMessage.DoesNotExist:
-            return None
+    name = models.CharField(max_length=200)
+
 
 class BaseMessage(models.Model):
     message_id = models.AutoField(null=False, editable=False, primary_key=True)
     message_type = models.CharField(choices=MESSAGE_TYPE, max_length=50)
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
     is_read = models.BooleanField()
-    content_type = models.ForeignKey(ContentType, on_delete= models.CASCADE, related_name= "recipient_set",
-                                        limit_choices_to= {"model_in" : (PrivateChat, Group)})
     sent_at = models.DateTimeField(auto_now_add=True)
-    object_id = models.PositiveIntegerField()
-    recipient = GenericForeignKey('content_type', 'object_id')
     class Meta:
         indexes = [
             models.Index(fields= ['object_id', 'content_type']),
@@ -52,9 +38,6 @@ class BaseMessage(models.Model):
             models.Index(fields= ['sender_id', 'object_id', 'content_type', 'sent_at'])
         ]
 
-
-
-    
 class TextMessage(models.Model):
     message_id = models.OneToOneField(BaseMessage, on_delete=models.CASCADE)
     content = models.TextField(max_length=600)
