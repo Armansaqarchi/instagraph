@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from django.http import FileResponse
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
 from django.db.models import Q
@@ -22,7 +22,7 @@ class IsFollowerOrPagePublic(BasePermission):
         
 
 
-class AsyncPostGet(LoginRequiredMixin, APIView):
+class AsyncPostGet(APIView):
 
     permission_classes = [IsFollowerOrPagePublic]
     
@@ -33,6 +33,9 @@ class AsyncPostGet(LoginRequiredMixin, APIView):
             num = int(request.GET.get("slide"))
             post_id = request.GET.get("id")
             media_post = MediaPost.objects.filter(Q(post_id = post_id) & Q(page_num = num)).first()
+
+            if media_post is None:
+                raise BadRequestException("Not a valid image detail")
             
             self.check_object_permissions(request, media_post.post_id)
             if media_post is None:
@@ -42,8 +45,9 @@ class AsyncPostGet(LoginRequiredMixin, APIView):
         except ValueError as e:
             raise BadRequestException(str(e))
         except FileNotFoundError as e:
-            return NotFoundException("No such file or stream found")
-
+            raise NotFoundException("No such file or stream found")
+        except ValidationError:
+            raise BadRequestException("Not a valid image detail")
 
 
 
