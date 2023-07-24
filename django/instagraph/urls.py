@@ -34,8 +34,8 @@ urlpatterns = [
     re_path(r'^admin/', admin.site.urls),
     re_path(r'^api/', include(token)),
     re_path(r'posts/', include('posts.urls')),
-    re_path(r'accounts/', include('accounts.urls'))
-    
+    re_path(r'accounts/', include('accounts.urls')),
+    re_path(r'chats/', include('chats.urls'))
 ]
 
 
