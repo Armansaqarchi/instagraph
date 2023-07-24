@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from django.db.models import Q
 from accounts.exceptions.Exceptions import *
+from .models import Chat
 import datetime
 
 
@@ -40,6 +41,7 @@ class getChatList(APIView):
 
     def get(self, request):
         account = request.user.account
-        
+        account.chat_set.order_by("")
+
 
     
