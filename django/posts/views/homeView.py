@@ -14,37 +14,37 @@ from django.conf import settings
 from django.views.decorators.cache import cache_page
 from ..serializer.Homeserializer import PostSerializer, StorySerializer
 from rest_framework.generics import ListAPIView
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.status import (
     HTTP_200_OK,
 )
 from accounts.exceptions.Exceptions import *
 
-class PostPagination(CursorPagination):
+class PostPagination(PageNumberPagination):
     page_size = 10
-    ordering = '-created_at'
-    max_page_size=100
+    page_size_query_param = "story_page"
+    max_page_size = 1000
 
-class StoryPagination(CursorPagination):
+class StoryPagination(PageNumberPagination):
     page_size = 5
-    ordering = '-created_at'
-    max_page_size=100
+    page_size_query_param = "post_page"
+    max_page_size = 1000
+
 
 class HomeView(ListAPIView):
     permission_classes = [OwnerPermission]
     login_url = settings.LOGIN_URL
     
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.GET.get("post_page"):
+    def set_type(self, request):
+        if request.GET.get("type") == "post":
             self.pagination_class = PostPagination
             self.serializer_class = PostSerializer
-        elif request.GET.get("story_page"):
+        elif request.GET.get("type") == "story":
             self.pagination_class = StoryPagination
             self.serializer_class = StorySerializer
         else:
             raise BadRequestException("invalid query params format")
-        return super().dispatch(request, *args, **kwargs)    
 
     def get_posts(self, request, followings : list):
         posts = QuerySet(model=Post)
@@ -62,15 +62,16 @@ class HomeView(ListAPIView):
 
 
     def get(self, request):
+
+        self.set_type(request=request)
+
         account = request.user.account
         following_set = account.follower_set.only("following")
 
         if self.pagination_class == PostPagination:
             items = self.get_posts(request, followings=following_set)
-            cursor_string = request.GET.get("post_page")
         else:
             items = self.get_stories(request, followings=following_set)
-            cursor_string = request.GET.get("post_page")
         items = self.paginate_queryset(items)
 
         serialized = self.serializer_class(items, many=True).data
@@ -79,7 +80,7 @@ class HomeView(ListAPIView):
         account.last_seen_posts = datetime.now()
         account.save() 
 
-        return self.get_paginated_response({"data" : serialized, "status" : "success", "last_seen" : last_seen_post})
+        return Response({"data" : serialized, "status" : "success", "last_seen" : last_seen_post}, status=HTTP_200_OK)
 
 
         
