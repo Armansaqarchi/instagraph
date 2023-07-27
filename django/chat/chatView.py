@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
-from accounts.models import BaseMessage
+from chat.models.messageModel import BaseMessage
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from django.db.models import Q

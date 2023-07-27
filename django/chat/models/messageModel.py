@@ -11,9 +11,7 @@ class BaseMessage(models.Model):
     sent_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         indexes = [
-            models.Index(fields= ['object_id', 'content_type']),
-            models.Index(fields= ['sender_id', 'object_id', 'content_type']),
-            models.Index(fields= ['sender_id', 'object_id', 'content_type', 'sent_at'])
+            models.Index(fields= ['message_type', 'chat'])
         ]
 
 class TextMessage(models.Model):
