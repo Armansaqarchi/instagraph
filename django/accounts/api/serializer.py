@@ -6,7 +6,7 @@ from rest_framework.validators import ValidationError
 from collections import OrderedDict
 from rest_framework.fields import SkipField
 from ..models import FollowRQ
-from chat.models import BaseMessage
+from chat.models.messageModel import BaseMessage
 from accounts.models import MediaProfile
 from django.shortcuts import get_object_or_404
 from os import path

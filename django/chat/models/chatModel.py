@@ -2,7 +2,6 @@
 from django.db import models
 from uuid import uuid4
 from accounts.models import Account
-from chat.models.messageModel import *
 
 
 MESSAGE_TYPE = (
@@ -13,10 +12,9 @@ MESSAGE_TYPE = (
 class Chat(models.Model):
     id = models.UUIDField(default= uuid4, null=False, primary_key=True, editable=True, unique=True)
     members = models.ManyToManyField(Account)
-    latest_message = models.ForeignKey(BaseMessage, on_delete=models.DO_NOTHING)
     
     @property
-    def update_latest_message(self):
+    def latest_message(self):
         self.latest_message = self.messages.last()
     
 

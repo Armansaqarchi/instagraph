@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'posts.apps.PostsConfig',
     'chat.apps.ChatConfig',
+    'channels',
     'rest_framework',
     'rest_framework_simplejwt',
 ]
@@ -123,6 +124,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'instagraph.wsgi.application'
+
+ASGI_APPLICATION = 'instagraph.asgi.application'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
 
