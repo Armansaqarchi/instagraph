@@ -129,6 +129,14 @@ ASGI_APPLICATION = 'instagraph.asgi.application'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "static/images")
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # PASSWORD_HASHERS = [
 #     'django.contrib.auth.hashers.Argon2PasswordHasher',
