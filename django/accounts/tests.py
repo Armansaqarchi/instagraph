@@ -1,21 +1,21 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
+from .models import Account
+from .models import Follows
 from django.test import Client
 
 
-class AuthenticationTest(TestCase):
+class AuthenticationInitializerTest(TestCase):
     def setUp(self):
-            self.client = Client(enforce_csrf_checks=True)
-            self.user1 = User.objects.create_user(
-                username="john_doe",
-                email="johnDoe@gmail.com",
-                password="johnDoe123"
-            )
-            self.account1 = 
+        self.client = Client(enforce_csrf_checks=True)
+        self.user1 = User.objects.create_user(
+            username="john_doe",
+            email="johnDoe@gmail.com",
+            password="johnDoe123"
+        )
 
 
-class LoginTest(AuthenticationTest):
-    
+class LoginTest(AuthenticationInitializerTest):
     def test_login_success(self):
         data = {
             "username": "john_doe",
@@ -51,7 +51,7 @@ class LoginTest(AuthenticationTest):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["detail"], "Authorization header must contain two space-delimited values")
 
-class SignupTest(AuthenticationTest):
+class SignupTest(AuthenticationInitializerTest):
     def test_signup_success(self):
         """
         when credentials are correct
@@ -78,16 +78,73 @@ class SignupTest(AuthenticationTest):
             "username" : "Arman",
             "password" : "Armantest"
         }
-        resposne = self.client.post("/accounts/signup", data)
-        self.assertEqual(resposne.status_code, 400)
+        response = self.client.post("/accounts/signup", data)
+        self.assertEqual(response.status_code, 400)
     def test_email_exists(self):
         """
         email already exists
         """
         data = {
-            "firstname" : "Arman",
+            "first_name" : "Arman",
             "last_name" : "sagharchi",
-            "email" : "armanDoe@gmail.com",
+            "email" : "johnDoe@gmail.com",
             "username" : "Arman",
             "password" : "Armantest"
         }
+        response = self.client.post("/accounts/signup", data=data)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["detail"], "The Email has already been taken by another user")
+
+
+class FollowListInitializerTest(TestCase):
+    def setUp(self) -> None:
+        self.client = Client(enforce_csrf_checks=True)
+        self.user1 = User.objects.create_user(
+            username="Arman",
+            password="Arman1",
+            email="arman.saqarchi@gmail.com"
+        )
+        self.user2 = User.objects.create_user(
+            username="John2",
+            password="john2",
+            email="johnDoe@gmail.com"
+        )
+        self.user3 = User.objects.create_user(
+            username="jane",
+            password="jane2",
+            email="janeDoe@gmail.com"
+        )
+        Follows.objects.create(
+            follower = self.user2.account,
+            following = self.user1.account
+        )
+        Follows.objects.create(
+            follower = self.user3.account,
+            following = self.user1.account
+        )
+
+
+class FollowersViewTest(FollowListInitializerTest):
+    def test_followers_success(self):
+        self.client.login(username = "Arman", password = "Arman1")
+        response = self.client.get("/accounts/followers/1?page=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["page_obj"]), 2)
+
+    def test_followers_no_authority(self):
+        self.client.login(username = "Arman", password = "Arman2")
+
+        response = self.client.get("/accounts/followers/1?page=1")
+        self.assertEqual(response.status_code, 403)
+
+    def test_followers_no_such_user(self):
+        self.client.login(username = "Arman", password = "Arman1")
+        response = self.client.get("/accounts/followers/5?page=1")
+        self.assertEqual(response.status_code, 404)
+
+class FollowingListTest(FollowListInitializerTest):
+    def test_following_success(self):
+        self.client.login(username = "John2", password = "john2")
+        response = self.client.get("accounts/followings/2?page=1")
+        self.assertEqual(response.json(), None)
+        self.assertEqual(response.status_code, 200)

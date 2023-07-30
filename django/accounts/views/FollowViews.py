@@ -39,11 +39,16 @@ logger = logging.getLogger(__name__)
 
 class IsFollowerPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
-        account_id = request.user.account.id
-        if obj.following_set.filter(follower = account_id).exists():
-            return True
-        
-        return False
+        try:
+            account_id = request.user.account.id
+            if account_id == obj.id:
+                return True
+            if obj.following_set.filter(follower = account_id).exists():
+                return True
+        except AttributeError:
+            pass
+
+        raise PermissionDenied()
     
 class OwnerPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -65,7 +70,7 @@ class FollowersView(ListAPIView):
        
     def get_paginator(self, request, id):
         try:
-            items = self.get_queryset(self, id)
+            items = self.get_queryset(id)
             paginator = Paginator(items, self.paginate_by)
             #getting page num from url params
             page_num = request.GET["page"]
@@ -73,7 +78,6 @@ class FollowersView(ListAPIView):
             raise BadRequestException("Page number must be an integer")
         except EmptyPage:
             raise BadRequestException("The page number exceedes maximum number")
-
         page_obj = paginator.get_page(page_num)
         return page_obj
         
@@ -82,7 +86,7 @@ class FollowersView(ListAPIView):
         try:
             account = get_object_or_404(Account, id=id)
             self.check_object_permissions(request, account)
-            page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
+            page_objs = self.get_paginator(request, id).object_list
             serializer = FollowerSerializer(page_objs, many=True)
 
 
@@ -92,9 +96,7 @@ class FollowersView(ListAPIView):
             return Response({"page_obj" : serializer.data, "followers_number" : followers_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied as e:
             raise ForibiddenException("Access denied")
-        except Exception as e:
-            # needes something more accurate
-            return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
+
 
 
 class FollowingList(ListAPIView):
@@ -125,15 +127,10 @@ class FollowingList(ListAPIView):
             self.check_object_permissions(request, account)
             page_objs = self.get_page(request, self.get_queryset(id=id)).object_list
             serializer = FollowingSerializer(page_objs, many=True)
-
             following_count = account.follower_set.count()
-
             return Response({"page_obj" : serializer.data, "followings_number" : following_count, "status" : "success"}, status=HTTP_200_OK)
         except PermissionDenied:
             raise ForibiddenException("Access denied to reach this page")
-        except Exception as e:
-            # needs something more accurate
-            return Response({"status" : "error", "message" : str(e)}, HTTP_400_BAD_REQUEST)
         
 
     
@@ -153,7 +150,6 @@ class FriendFollowRQ(APIView):
         has_requested = to_user.received_set.filter(sender = request.user.account.id).exists()
         if has_requested:
             raise AlreadyExistsException("you have already sent follow request to user %s" %to_user.user.username)
-
         sender = request.user.account
         is_following = sender.follower_set.filter(following = following_id)
 
