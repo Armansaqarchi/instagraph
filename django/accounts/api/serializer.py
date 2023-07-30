@@ -107,16 +107,13 @@ class UserCreationSerializer(Serializer):
     password = serializers.CharField()
 
     class Meta:
-        
         fields = ["first_name", "username", "email", "password2", "date_of_birth", "bio"]
 
     def validate(self, attrs):
-
         if  User.objects.filter(username = attrs['username']).exists():
             raise UsernameExistsException(f"username {attrs['username']} already exists")
         elif User.objects.filter(email = attrs['email']).exists():
             raise EmailExistsException(f"email {attrs['email']} already exists")
-
         return super().validate(attrs)
 
     def create(self, validated_data):
@@ -208,9 +205,9 @@ class MessageSerializer(ModelSerializer):
         model = BaseMessage
         fields = "__all__"
 
-class EmailExistsException(ValidationError):
+class EmailExistsException(Exception):
     pass
 
 
-class UsernameExistsException(ValidationError):
+class UsernameExistsException(Exception):
     pass
