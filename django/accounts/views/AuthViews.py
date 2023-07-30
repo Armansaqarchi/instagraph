@@ -6,7 +6,8 @@ from rest_framework.generics import GenericAPIView
 from ..models import Account
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
-from django.shortcuts import redirect
+from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
 from django.utils.http import url_has_allowed_host_and_scheme as is_url_safe
@@ -30,6 +31,7 @@ from rest_framework.permissions import (
 from rest_framework.status import(
     HTTP_200_OK,
     HTTP_201_CREATED,
+    HTTP_208_ALREADY_REPORTED,
     HTTP_404_NOT_FOUND,
     HTTP_401_UNAUTHORIZED,
     HTTP_400_BAD_REQUEST,
@@ -39,16 +41,6 @@ from ..exceptions.Exceptions import *
 
 
 logger = logging.getLogger(__name__)
-
-
-class NotAuthenticatedView(APIView):
-    
-    def dispatch(self, request, *args, **kwargs):
-
-        if request.user.is_authenticated:
-            return redirect("home")
-        
-        return super().dispatch(request, *args, **kwargs)
 
 
 class SingleProfileView(GenericAPIView):
@@ -102,17 +94,19 @@ class SingleProfileView(GenericAPIView):
             raise BadRequestException("400 BAD REQUEST")
 
 
-    
-class LoginView(NotAuthenticatedView):
 
-    """
-    this overrides dispatch function which is in charge to handle where the response should go
-    but since passowrd would better not shown in logs, it would better to treat as sensitive arg
-    """
 
-    permission_classes = [AllowAny]
-    
+
+class LoginView(APIView):
+
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+
     def post(self, request) -> Response:
+
+        if request.user.is_authenticated:
+            return Response({"detail" : "already authenticated"}, status=HTTP_208_ALREADY_REPORTED)
 
         try:
             username = request.data["username"]
@@ -145,9 +139,9 @@ class LoginView(NotAuthenticatedView):
 
             referesh_token = user.account.token
 
-            return Response({"message" : message, "status" : "success", "refresh" : str(referesh_token),
-                             "access_token" : str(referesh_token.access_token)}, HTTP_200_OK)
-        else:
+            return Response({"message" : message, "status" : "success", "token" : {"refresh" : str(referesh_token),
+                             "access" : str(referesh_token.access_token)}}, HTTP_200_OK)
+        else: 
             logger.info(f"failed to authenticate user %s".format(request.user.id))
 
             raise UnauthorizedException("Username or password may be incorrect")
@@ -155,7 +149,7 @@ class LoginView(NotAuthenticatedView):
 
 
     
-class SignUpView(NotAuthenticatedView):
+class SignUpView(APIView):
     permission_classes = [AllowAny]
     def post(self, request) -> Response:
         
@@ -176,21 +170,18 @@ class SignUpView(NotAuthenticatedView):
                         return Response({"message" : "activation code has been sent to your email, please check your inbox and submit your verification",
                                         "status" : "success"}, status=HTTP_200_OK)
                 else:
-                    user = authenticate(request=request)
-                    refresh_token = user.account.token
 
                     logger.info(f"a new user signed up : %s".format(request.user.id))
 
-                    return Response({"status" : "success", "message" : "user created",
-                                      "refresh" : str(refresh_token), "access_token" : str(refresh_token.access_token)},
+                    return Response({"status" : "success", "message" : "user created"},
                                         HTTP_201_CREATED)
             
         except ValidationError:
             raise BadRequestException("Bad or incorrect informations")
         except EmailExistsException:
-            raise AlreadyExistsException("The Email is already taken by another user")
+            raise AlreadyExistsException("The Email has already been taken by another user")
         except UsernameExistsException:
-            raise AlreadyExistsException("The username is already taken by another user")
+            raise AlreadyExistsException("The username has already been taken by another user")
         
 
 class Activate(APIView):
