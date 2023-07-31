@@ -4,7 +4,7 @@ from .models import Account
 from .models import Follows
 from django.test import Client
 
-
+from django.http.response import HttpResponseNotFound
 class AuthenticationInitializerTest(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
@@ -122,12 +122,16 @@ class FollowListInitializerTest(TestCase):
             follower = self.user3.account,
             following = self.user1.account
         )
+        Follows.objects.create(
+            follower = self.user1.account,
+            following = self.user3.account
+        )
 
 
 class FollowersViewTest(FollowListInitializerTest):
     def test_followers_success(self):
         self.client.login(username = "Arman", password = "Arman1")
-        response = self.client.get("/accounts/followers/1?page=1")
+        response = self.client.get("/accounts/followers/7?page=1")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()["page_obj"]), 2)
 
@@ -139,12 +143,26 @@ class FollowersViewTest(FollowListInitializerTest):
 
     def test_followers_no_such_user(self):
         self.client.login(username = "Arman", password = "Arman1")
-        response = self.client.get("/accounts/followers/5?page=1")
+        response = self.client.get("/accounts/followers/20?page=1")
         self.assertEqual(response.status_code, 404)
 
 class FollowingListTest(FollowListInitializerTest):
     def test_following_success(self):
-        self.client.login(username = "John2", password = "john2")
-        response = self.client.get("accounts/followings/2?page=1")
-        self.assertEqual(response.json(), None)
+        login = self.client.login(username = "John2", password = "john2")
+        response = self.client.get("/accounts/followings/16")
         self.assertEqual(response.status_code, 200)
+
+    def test_following_fail(self):
+        login = self.client.login(username = "John2", password = "john2")
+        response = self.client.get("/accounts/followings/12")
+        self.assertEqual(response.status_code, 403)
+
+    def test_following_not_found(self):
+        login = self.client.login(username = "John2", password = "john2")
+        response = self.client.get("/accounts/followings/11111")
+        self.assertEqual(response.status_code, 404)
+    
+
+class FriendFollowReqTest(TestCase):
+    def setUp(self):
+        
