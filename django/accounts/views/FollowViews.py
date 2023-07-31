@@ -47,7 +47,6 @@ class IsFollowerPermission(BasePermission):
                 return True
         except AttributeError:
             pass
-
         raise PermissionDenied()
     
 class OwnerPermission(BasePermission):

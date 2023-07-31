@@ -193,7 +193,10 @@ class FollowingSerializer(Serializer):
         return obj.user.username
     
     def get_following_image(self, obj):
-        return obj.image_set.first().profile_image.url
+        try:
+            return obj.profile_images.first().profile_image.url
+        except AttributeError:
+            return None
 
 class FollowRequestSerializer(ModelSerializer):
 
