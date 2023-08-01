@@ -165,4 +165,36 @@ class FollowingListTest(FollowListInitializerTest):
 
 class FriendFollowReqTest(TestCase):
     def setUp(self):
-        
+        self.client = Client(enforce_csrf_checks=True)
+        self.user1 = User.objects.create_user(
+            username = "Arman",
+            password = "armansa20"
+        )
+        self.user2 = User.objects.create_user(
+            username = "Arman2",
+            password = "armansa20"
+        )
+
+    def test_request_success(self):
+
+        reset_sequences = True
+
+        login = self.client.login(username = "Arman", password = "armansa20")
+        self.assertTrue(login)
+        response = self.client.get("/accounts/follow_req/23")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+
+    def test_request_user_does_not_exist(self):
+        login = self.client.login(username = "Arman", password = "armansa20")
+        self.assertTrue(login)
+        response = self.client.get("/accounts/follow_req/111111")
+        self.assertEqual(response.status_code, 404)
+    
+    def test_request_already_following(self):
+        login = self.client.login(username = "Arman", password = "armansa20")
+        self.assertTrue(login)
+        response = self.client.get("/accounts/follow_req/20")
+        self.assertEqual(response.status_code, 200)
+        self.client.get("/accounts/follow_req/23")
+        self.assertEqual(response.status_code, 409)
