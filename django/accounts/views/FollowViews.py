@@ -144,7 +144,7 @@ class FriendFollowRQ(APIView):
         to_user = Account.objects.filter(id = following_id).first()
 
         if to_user is None:
-            raise NotFoundException("user id %s does not exists" %request.user.id)
+            raise NotFoundException("user id %s does not exists" %following_id)
         
         has_requested = to_user.received_set.filter(sender = request.user.account.id).exists()
         if has_requested:
