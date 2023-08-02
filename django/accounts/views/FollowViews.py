@@ -8,6 +8,7 @@ from ..api.serializer import (
     FollowingSerializer,
     FollowerSerializer
 )
+from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
@@ -47,6 +48,7 @@ class FollowersView(ListAPIView):
     login_url = "accounts/login"
     paginate_by = 20
 
+
     def get_queryset(self, id):
         account = get_object_or_404(Account, id=id)
         followings_id = account.following_set.values_list('follower', flat = True)
@@ -57,12 +59,12 @@ class FollowersView(ListAPIView):
             items = self.get_queryset(id)
             paginator = Paginator(items, self.paginate_by)
             #getting page num from url params
-            page_num = request.GET["page"]
+            page_num = request.GET.get("page")
+            page_obj = paginator.get_page(page_num)
         except PageNotAnInteger:
             raise BadRequestException("Page number must be an integer", code = "page_not_a_number")
         except EmptyPage:
             raise BadRequestException("The page number exceedes maximum number", code = "empty_page")
-        page_obj = paginator.get_page(page_num)
         return page_obj
         
 
@@ -90,10 +92,9 @@ class FollowingList(ListAPIView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_page(self, request, object_list):
-        try:
-            paginator = Paginator(object_list, self.paginate_by)
-            page_num = request.GET.get('page')
-        except Exception as e:
+        paginator = Paginator(object_list, self.paginate_by)
+        page_num = request.GET.get('page')
+        if not page_num:
             page_num = 1
         return paginator.get_page(page_num)
 
@@ -113,6 +114,7 @@ class FollowingList(ListAPIView):
                               "followings_number" : following_count, "Status" : "success", "Code": "page_is_up"}, status=HTTP_200_OK)
         except PermissionDenied:
             raise ForibiddenException("Access denied to reach this page")
+
         
 
     
@@ -150,15 +152,15 @@ class FriendFollowRQ(APIView):
 
                 logger.info("sent friendly request to user : %s".format(to_user.user.username))
 
-                message = "successfully sent friendly request"
-                return Response({"Message" : message, "status" : "success"}, status = HTTP_200_OK)
+                message = "successfully sent follow request"
+                return Response({"Message" : message, "Status" : "success", "Code" : "folliw_req_send"}, status = HTTP_200_OK)
             else:
                 following_acc = Account.objects.get(id = following_id)
                 Follows.objects.create(
                     follower = request.user.account,
                     following = following_acc
                 )
-                message = "strated following %s".format(to_user.user.username)
+                message = "strated following %s" %to_user.user.username
                 logger.info("user %s started following user %s".format(request.user.id, following_id))
                 return Response({'Message' : message, 'Status' : "success", "Code": "follow_req"}, status = HTTP_200_OK)
         except IntegrityError as e:
@@ -173,22 +175,28 @@ class AcceptRQ(APIView):
         """
         given RQ_id, accepts the friend reqeust corresponding to the RQ_id
         """
-        is_requested = FollowRQ.objects.filter(id = RQ_id).first()
-        if is_requested is not None:
-            has_followed = Follows.objects.filter(Q(follower = is_requested.sender) & Q(following = is_requested.recipient)).exists()
+        try:
+            fr_req = FollowRQ.objects.get(id = RQ_id)
+        except FollowRQ.DoesNotExist:
+            raise NotFoundException("No such request", code="invalid id")
+        except ValidationError:
+            raise BadRequestException("invalid uuid number or request is not valid", code="invalid format")
+        self.check_object_permissions(request=request, obj=fr_req.recipient)
+        if fr_req is not None:
+            has_followed = Follows.objects.filter(Q(follower = fr_req.sender) & Q(following = fr_req.recipient)).exists()
             if not has_followed:
                 with transaction.atomic():
-                    follower_user = is_requested.sender
-                    following_user = is_requested.recipient
+                    follower_user = fr_req.sender
+                    following_user = fr_req.recipient
                     Follows.objects.get_or_create(
                         follower = follower_user,
                         following = following_user
                     )
-                    is_requested.delete()
+                    fr_req.delete()
                 return Response({"Message" : f"accepted {follower_user} request",
                                   "Status" : "success", "Code": "request_accepted"}, status=HTTP_200_OK)
 
-            raise AlreadyExistsException("you are already following the user", code= "already_following")
+            raise AlreadyExistsException("user is already following you", code= "already_following")
         
         raise BadRequestException("no such following request exists", code= "no_such_user")
     
@@ -205,6 +213,8 @@ class RQList(LoginRequiredMixin, ListAPIView):
         """
         try:
             RQ_list = FollowRQ.objects.filter(recipient = id)
+            account = Account.objects.get(id = id)
+            self.check_object_permissions(request, obj=account)
             serialized = FollowRequestSerializer(RQ_list, many = True)
 
             return Response({"Message" : "requests are retrieved successfully", "Status" : "success",

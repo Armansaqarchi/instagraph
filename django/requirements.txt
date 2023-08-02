@@ -6,3 +6,4 @@ pillow==10.0.0
 django-redis==5.3.0
 redis==4.6.0
 channels==4.0.0
+pytest_django==4.5.2
