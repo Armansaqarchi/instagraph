@@ -115,14 +115,9 @@ class FollowingList(ListAPIView):
         except PermissionDenied:
             raise ForibiddenException("Access denied to reach this page")
 
-        
-
     
 class FriendFollowRQ(APIView):
-        
-
     permission_classes = [IsAuthenticated]
-
     def get(self, request, following_id) -> Response:
 
 

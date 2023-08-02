@@ -18,6 +18,7 @@ from django.conf import settings
 from django.db import transaction
 from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
+    AccountSerializer,
     UserSerializer,
     ProfileSerializer,
     EmailExistsException,
@@ -126,26 +127,32 @@ class ProfileView(APIView):
             raise AlreadyExistsException("The username has already been taken by another user", "username_exists")
         
     def put(self, request):
-        new_profile = request.data
+
         try:
+            new_profile =  request.data
             id = request.GET.get("id")
         except AttributeError:
             pass
+        except ValidationError:
+            raise BadRequestException("invalid request format", code="data_formation_invalid")
         if id:
             account = Account.objects.get(id = id)
         else:
             account = request.user.account
         user = account.user
-        account.update(
-            bio = new_profile.get("bio", default = ""),
-            gender = new_profile.get("gender", default = account.gender),
-            is_price = new_profile.get("is_private", default = account.is_private)
-        )
-        user.update(
-            username = new_profile.get("username", user.username),
-            firstname = new_profile.get("first_name",user.firstname),
-            lastname = new_profile.get("last_name", user.lastname)
-        )
+        account.bio = new_profile.get("bio")
+        account.gender = new_profile.get("bio")
+        account.is_price = new_profile.get("bio")
+
+        user.username = new_profile.get("username")
+        user.firstname = new_profile.get("firstname")
+        user.lastname = new_profile.get("lastname")
+
+        with transaction.atomic():
+            account.save()
+            user.save()
+        return Response({"Message" : "user successfully updated", "Status" : "Success", "Code": "user_updated"})
+        
 
 
         

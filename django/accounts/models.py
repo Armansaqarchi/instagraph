@@ -17,7 +17,7 @@ class Account(models.Model):
     )
     
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False, unique=True)
     date_of_birth = models.DateField(auto_now_add=True)
     bio = models.TextField(max_length=500)
     gender = models.CharField(max_length=100, choices=GENDER, default="Prefer not to say")
