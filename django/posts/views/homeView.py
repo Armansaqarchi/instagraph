@@ -19,7 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.status import (
     HTTP_200_OK,
 )
-from accounts.exceptions.Exceptions import *
+from exceptions.exceptions import *
 
 class PostPagination(PageNumberPagination):
     page_size = 10

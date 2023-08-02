@@ -3,8 +3,9 @@ from models import MediaProfile, MediaStory
 from django.http import FileResponse
 from django.conf import settings
 from rest_framework.response import Response
+from exceptions.exceptions import handle
 from django.db.models import Q
-from ..exceptions.Exceptions import *
+from exceptions.exceptions import *
 from rest_framework.status import (
      HTTP_400_BAD_REQUEST,
      HTTP_200_OK,
@@ -29,7 +30,7 @@ def async_story_get(request):
         story_id = int(request.GET.get("id"))
         media_story = MediaStory.objects.filter(Q(story_id = story_id) | Q(page_num = num)).first()
         if media_story is None:
-            return Response({"message" : "no image found", "status" : "success"}, status=HTTP_404_NOT_FOUND)
+            return Response({"Message" : "no image found", "Status" : "success", "Code" : "no_such_image"}, status=HTTP_404_NOT_FOUND)
         image_file = open(media_story.story_image.path, 'rb')
         return FileResponse(image_file, content_type = "image/jpeg")
     except ValueError as e:

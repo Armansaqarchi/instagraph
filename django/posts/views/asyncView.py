@@ -4,9 +4,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
 from django.db.models import Q
-from rest_framework.decorators import permission_classes
 from ..models import MediaPost
-from accounts.exceptions.Exceptions import *
+from exceptions.exceptions import *
 from accounts.models import Account
 from rest_framework.status import (
     HTTP_404_NOT_FOUND,
