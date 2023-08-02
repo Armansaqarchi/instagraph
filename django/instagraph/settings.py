@@ -30,7 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["0.0.0.0", "49.13.60.63", "127.0.0.1", "localhost"]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=59),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
