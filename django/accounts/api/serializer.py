@@ -8,7 +8,7 @@ from rest_framework.fields import SkipField
 from ..models import FollowRQ
 from chat.models.messageModel import BaseMessage
 from accounts.models import MediaProfile
-from django.shortcuts import get_object_or_404
+from exceptions.exceptions import *
 from os import path
 from django.conf import settings
 from rest_framework.serializers import(
@@ -99,7 +99,7 @@ class MediaProfileSerializer(ModelSerializer):
         model = MediaProfile
         fields = "__all__"
 
-class UserCreationSerializer(Serializer):
+class UserSerializer(Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     username = serializers.CharField()
@@ -111,17 +111,16 @@ class UserCreationSerializer(Serializer):
 
     def validate(self, attrs):
         if  User.objects.filter(username = attrs['username']).exists():
-            raise UsernameExistsException(f"username {attrs['username']} already exists")
+            print("fsaga")
+            raise UsernameExistsException()
         elif User.objects.filter(email = attrs['email']).exists():
-            raise EmailExistsException(f"email {attrs['email']} already exists")
-        return super().validate(attrs)
+            raise EmailExistsException()
+        return super().validate(attrs)\
+
 
     def create(self, validated_data):
 
         password = make_password(validated_data["password"])
-
-
-
         user = User.objects.create(
             username = validated_data['username'],
             email = validated_data['email'],
@@ -129,19 +128,18 @@ class UserCreationSerializer(Serializer):
             first_name = validated_data["first_name"],
             last_name = validated_data["last_name"]
         )
-
         user.save()
-
         return user
+    
+    def update(self, instance, validated_data):
+        print("dsfafsaffsa", instance)
+        print(validated_data)
 
     def get_first_name(self, obj):
         return obj.user.first_name
     
     def get_last_name(self, obj):
         return obj.user.last_name
-
-    
-
 
 class FollowRQSerializer(Serializer):
     follows_id = serializers.IntegerField(source="follows_id")
@@ -197,6 +195,24 @@ class FollowingSerializer(Serializer):
             return obj.profile_images.first().profile_image.url
         except AttributeError:
             return None
+        
+class PasswordChangeSerializer(Serializer):
+    new_password = serializers.CharField()
+    confirm_new_password = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs.get("new_password") != attrs.get("confirm_new_password"):
+            raise ValidationError("password and confirm password should match")
+        
+        if self.context.get("id") is None:
+            return ValidationError("no id specified")
+    
+    def change_password(self):
+        try:
+            account = Account.objects.get(self.context.get("id"))
+        except Account.DoesNotExist:
+            raise NotFoundException("No such user")
+        account.set_password(self.new_password)
 
 class FollowRequestSerializer(ModelSerializer):
 

@@ -5,7 +5,7 @@ from chat.models.messageModel import BaseMessage
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from django.db.models import Q
-from accounts.exceptions.Exceptions import *
+from exceptions.exceptions import *
 from chat.chatSerializer import ChatListSerializer
 import datetime
 

@@ -224,7 +224,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-    )
+    ),
+    "EXCEPTION_HANDLER" : "exceptions.exceptions.handle_exception"
 }
 
 

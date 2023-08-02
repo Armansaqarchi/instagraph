@@ -8,18 +8,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime, timedelta
 
 
-FR_STATUS = (
-    ("True", "YES"),
-    ("False", "NO"),
-    ("pending", "PENDING")
-)
-
-
 class Account(models.Model):
+
+    GENDER = (
+        ("Male", "Male"),
+        ("Female", "Female"),
+        ("Unknown", "Prefer not to say")
+    )
+    
     id = models.AutoField(null=False, primary_key=True, editable = False, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=False, blank=False)
     date_of_birth = models.DateField(auto_now_add=True)
     bio = models.TextField(max_length=500)
+    gender = models.CharField(max_length=100, choices=GENDER, default="Prefer not to say")
     is_private = models.BooleanField(default=False)
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
@@ -61,6 +62,14 @@ class Follows(models.Model):
 
 
 class FollowRQ(models.Model):
+
+    FR_STATUS = (
+    ("True", "YES"),
+    ("False", "NO"),
+    ("pending", "PENDING")
+    )
+
+
     id = models.UUIDField(default=uuid4, null=False, primary_key=True, editable = False, unique=True)
     sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="sent_set") # temporarily True, in debugging mode
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
