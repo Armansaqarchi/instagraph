@@ -73,8 +73,7 @@ class ProfileSerializer(Serializer):
 
     def get_profile_picture(self, object):
         try:
-            query = "SELECT * FROM profile WHERE user_id = %s ORDER BY set_at DESC" %object.user.id
-            serialized_profile =  MediaProfileSerializer(MediaProfile.objects.raw(query)[0])
+            serialized_profile =  MediaProfileSerializer(object.profile_images.first())
             return serialized_profile.data
         except TypeError:
             return None
@@ -97,7 +96,7 @@ class MediaProfileSerializer(ModelSerializer):
 
     class Meta:
         model = MediaProfile
-        fields = "__all__"
+        exclude = ["profile_image"]
 
 class UserSerializer(Serializer):
     first_name = serializers.CharField()
@@ -111,7 +110,6 @@ class UserSerializer(Serializer):
 
     def validate(self, attrs):
         if  User.objects.filter(username = attrs['username']).exists():
-            print("fsaga")
             raise UsernameExistsException()
         elif User.objects.filter(email = attrs['email']).exists():
             raise EmailExistsException()
@@ -173,7 +171,7 @@ class FollowerSerializer(Serializer):
     
     def get_following_image(self, obj):
         try:
-            return obj.profile_images.first().profile_image.url
+            return obj.profile_images.first().id
         except AttributeError:
             return None
 
@@ -192,7 +190,7 @@ class FollowingSerializer(Serializer):
     
     def get_following_image(self, obj):
         try:
-            return obj.profile_images.first().profile_image.url
+            return obj.profile_images.first().id
         except AttributeError:
             return None
         

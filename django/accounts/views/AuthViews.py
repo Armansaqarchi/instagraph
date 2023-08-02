@@ -37,7 +37,7 @@ from exceptions.exceptions import *
 logger = logging.getLogger(__name__)
 
 
-class SingleProfileView(APIView):
+class UserProfileView(APIView):
 
     model = Account
     login_url = "accounts/login"
@@ -46,25 +46,18 @@ class SingleProfileView(APIView):
 
     def has_object_permission(self, request, obj):
         if request.method in SAFE_METHODS: # read access
-            logger.info(f"user %s has read only permission to object profile : %s".format(request.user.id, obj.id))
             return True, "SAFE"
         try: 
             if request.user == obj.user:
-                logger.info(f"%s is owner of profile %s : %s-%s".format(request.user.id, obj.id, obj.firstname, obj.lastname))
                 return True, "OWNER"
         except FieldDoesNotExist:
             return False, "BAD REQUEST"
         return False, "PERMISSION DENIED"
     
-
-    def get_queryset(self):
-        return Account.objects.filter(id = self.kwargs.get("pk"))
-        
     
     def get(self, request, pk) -> Response:
-        self.kwargs["pk"] = pk
         try:
-            account = self.get_object()
+            account = Account.objects.get(id = pk)
             is_allowed, message = self.has_object_permission(request, obj=account)
             if is_allowed:
                 
@@ -75,9 +68,9 @@ class SingleProfileView(APIView):
             else:
                 raise UnauthorizedException("You are refused to access this page", "insufficient_permissions")
         except (Account.DoesNotExist, Http404):
-            raise NotFoundException("Account id %s does not exist", self.kwargs.get("pk"), code="profile_not_found")
-        except IndexError:
-            raise BadRequestException("400 BAD REQUEST", "bad_request")
+            raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
+        # except IndexError:
+        #     raise BadRequestException("400 BAD REQUEST", "bad_request")
 
 
 class LoginView(APIView):
