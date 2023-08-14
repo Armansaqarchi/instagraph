@@ -15,6 +15,6 @@ class IsFollowerPermission(BasePermission):
     
 class OwnerPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method.lower() == "post":
+        if request.user.is_superuser:
             return True
         return True if obj.id == request.user.account.id else False

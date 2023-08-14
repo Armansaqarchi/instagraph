@@ -1,7 +1,6 @@
 from typing import Any
 from django import http
 from django.http.response import HttpResponse
-from rest_framework.permissions import BasePermission
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import ListAPIView
 from ..api.serializer import (

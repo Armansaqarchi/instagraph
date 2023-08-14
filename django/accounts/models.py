@@ -2,10 +2,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from uuid import uuid4
+from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from datetime import datetime, timedelta
+from django.db.models import Q
 
 
 class Account(models.Model):
@@ -30,6 +31,45 @@ class Account(models.Model):
     @property
     def token(self):
         return RefreshToken.for_user(self.user)
+    
+    @property
+    def followers_list(self):
+        followers_id = self.following_set.values_list("follower", flat = True)
+        return Account.objects.filter(Q(id__in = followers_id))
+    
+    @property
+    def followings_list(self):
+        followings_id = self.follower_set.values_list("following", flat = True)
+        return Account.objects.filter(Q(id__in = followings_id))
+    
+    @property
+    def posts_list(self):
+        return Account.user_posts
+    
+    @property
+    def followers_count(self):
+        followers_id = self.following_set.values_list("follower", flat = True)
+        return Account.objects,filter(Q(id__in = followers_id).count())
+    
+    @property
+    def followings_count(self):
+        followings_id = self.follower_set.values_list("following", flat = True)
+        return Account.objects.filter(Q(id__in = followings_id).count())
+    
+        
+    
+
+    def update(self, updated_data):
+        if isinstance(updated_data, dict):
+            for key, value in updated_data:
+                if not hasattr(self, key):
+                    raise ValidationError(f"no such attribute : {key}")
+                self.key = value 
+        else:
+            raise ValidationError("invalid argument type : update_data object must be of type 'dict' ")
+        
+        self.save()
+        
 
     class Meta:
         ordering = ['date_of_birth']

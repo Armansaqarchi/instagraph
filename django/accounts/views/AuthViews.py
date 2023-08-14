@@ -7,18 +7,13 @@ from ..permissions.accountPermissions import (
     OwnerPermission
 )
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
-from django.utils.http import url_has_allowed_host_and_scheme as is_url_safe
 from rest_framework.exceptions import ValidationError
 from ..models import Activation
-from django.http import Http404
-from django.conf import settings
+from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
-from ..utils import digit_random6, signup_verification
 from ..api.serializer import (
-    AccountSerializer,
     UserSerializer,
     ProfileSerializer,
     EmailExistsException,
@@ -32,8 +27,9 @@ from rest_framework.status import(
     HTTP_201_CREATED,
     HTTP_208_ALREADY_REPORTED,
 )
-from exceptions.exceptions import *
 
+
+from exceptions.exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +39,6 @@ class UserProfileView(APIView):
     model = Account
     login_url = "accounts/login"
     permission_classes = [IsAuthenticated]
-    renderer_classes = [JSONRenderer]
 
     def has_object_permission(self, request, obj):
         if request.method in SAFE_METHODS: # read access
@@ -59,19 +54,13 @@ class UserProfileView(APIView):
     def get(self, request, pk) -> Response:
         try:
             account = Account.objects.get(id = pk)
-            is_allowed, message = self.has_object_permission(request, obj=account)
-            if is_allowed:
-                
-                serializer = ProfileSerializer(account)
-                #sending json response containing the Account info, use 'Account' to access it
-                # logger.info(f"access allowed for user : %s profile : %s".format(request.user.id, serializer.data.get("username")))
-                return Response({"Account" : serializer.data, "Message" : message, "Status" : "success"}, status=HTTP_200_OK)
-            else:
-                raise UnauthorizedException("You are refused to access this page", "insufficient_permissions")
-        except (Account.DoesNotExist, Http404):
+            self.has_object_permission(request, obj=account)    
+            serializer = ProfileSerializer(account)
+            #sending json response containing the Account info, use 'Account' to access it
+            return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
+
+        except Account.DoesNotExist:
             raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
-        # except IndexError:
-        #     raise BadRequestException("400 BAD REQUEST", "bad_request")
 
 
 class LoginView(APIView):
@@ -86,19 +75,8 @@ class LoginView(APIView):
         else:
             user = authenticate(username = username, password = password)
         if user is not None:
-            logger.info(f"user %s successfully authenticated".format(user.account.id))
             login(request=request, user=user)
             message = "successfully logged in"
-            redirect_to = request.META.get("next")
-            if settings.CHECK_URLS:
-                if redirect_to is not None:
-                    url_is_safe = is_url_safe(url=redirect_to, allowed_hosts=request.get_host(), require_https=request.is_secure())
-                    if not url_is_safe:
-                        redirect_to = settings.LOGIN_REDIRECT_URL
-                else:
-                    redirect_to = settings.LOGIN_REDIRECT_URL
-                    url_is_safe = True
-            else: url_is_safe = None
             referesh_token = user.account.token
             return Response({"Message" : message, "Status" : "success", "Code" : "login_successful",
                               "Token" : {"refresh" : str(referesh_token),
@@ -107,46 +85,36 @@ class LoginView(APIView):
             raise UnauthorizedException("Username or password may be incorrect", "incorrect_credentials")
 
 
-class ProfileView(APIView):
+class ProfileView(ModelViewSet):
     permission_classes = [OwnerPermission]
-    def post(self, request) -> Response:
+    def create(self, request) -> Response:
         user = UserSerializer(data=request.data)
         try:
-            if user.is_valid(raise_exception=True):
-                user = user.save()
-                token = user.account.token
-                return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
-                                  "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
+            user.is_valid(raise_exception=True)
+            user = user.save()
+            token = user.account.token
+            return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
+                                    "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
                                         HTTP_201_CREATED)
         except ValidationError as e:
             self.kwargs["Fields"] = {field : str(e.detail[field][0]) for field in e.detail}
-            raise BadRequestException("invalid format", "invalid_format")
+            print(e.detail)
+            raise BadRequestException("invalid format for the request body", "signup_fields_error")
         except EmailExistsException:
             raise AlreadyExistsException("The Email has already been taken by another user", code="email_exists")
         except UsernameExistsException:
             raise AlreadyExistsException("The username has already been taken by another user", "username_exists")
-        
-    def put(self, request):
+    
 
-        try:
-            new_profile =  request.data
-            id = request.GET.get("id")
-        except AttributeError:
-            pass
-        except ValidationError:
-            raise BadRequestException("invalid request format", code="data_formation_invalid")
+    def update(self, request):
+        new_profile =  request.data
+        id = getattr(request.GET, "id", None)
         if id:
             account = Account.objects.get(id = id)
         else:
             account = request.user.account
         user = account.user
-        account.bio = new_profile.get("bio")
-        account.gender = new_profile.get("bio")
-        account.is_price = new_profile.get("bio")
-
-        user.username = new_profile.get("username")
-        user.firstname = new_profile.get("firstname")
-        user.lastname = new_profile.get("lastname")
+        
 
         with transaction.atomic():
             account.save()
