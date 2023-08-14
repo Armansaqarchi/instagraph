@@ -1,15 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from rest_framework.exceptions import APIException
-from rest_framework.validators import ValidationError
 from collections import OrderedDict
-from rest_framework.fields import SkipField
+from rest_framework.validators import ValidationError
 from ..models import FollowRQ
 from chat.models.messageModel import BaseMessage
 from accounts.models import MediaProfile
 from exceptions.exceptions import *
-from os import path
+from rest_framework.fields import Field
 from django.conf import settings
 from rest_framework.serializers import(
     Serializer,
@@ -20,47 +17,14 @@ from ..models import (
     Follows
 )
 
-class AccountSerializer(ModelSerializer):
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-    email = serializers.EmailField()
-    date_of_birth = serializers.DateField()
-    bio = serializers.CharField(style={'base_template': 'textarea.html'})
 
-    class Meta:
-        model = Account
-        fields = ["first_name", "last_name", "email", "date_of_birth", "bio"]
 
-    def to_representation(self, instance):
-        """
-        Object instance -> Dict of primitive datatypes.
-        """
-    
-        ret = OrderedDict()
+class ProfileViewSerializer(Serializer):
+    """
+    the class only needs 'to_representation' method,
+    this is for showing profile to whoever authorized to view
+    """
 
-        ret["first_name"] = instance.user.first_name
-        ret["last_name"] = instance.user.last_name
-
-        fields = self._readable_fields
-
-        for field in fields:
-            try:
-                attribute = field.get_attribute(instance)
-            except SkipField:
-                continue
-            # this function is the same as parent function but raises AttrbuteError when firstname and lastname is not found
-            except AttributeError:
-                continue
-
-            if attribute is None:
-                ret[field.field_name] = None
-            else:
-                ret[field.field_name] = field.to_representation(attribute)
-
-        return ret
-        
-
-class ProfileSerializer(Serializer):
     profile_picture = serializers.SerializerMethodField()
     firstname = serializers.SerializerMethodField()
     lastname = serializers.SerializerMethodField()
@@ -70,30 +34,35 @@ class ProfileSerializer(Serializer):
     followings = serializers.SerializerMethodField()
     posts = serializers.SerializerMethodField()
 
+    def to_representation(self, instance):
+        ret = OrderedDict()
+        ret["firstname"] = instance.user.firstname
+        ret["lastname"] = instance.user.lastname
+        ret["username"] = instance.user.username
+        ret["bio"] = instance.bio
+        ret["followers"] = instance.followers_count
+        ret["followings"] = instance.followings_count
+        ret["posts"] = instance.posts_list
+        ret["profile_picture"] = instance.profile_images.first().id
+        return ret
 
-    def get_profile_picture(self, object):
-        try:
-            serialized_profile =  MediaProfileSerializer(object.profile_images.first())
-            return serialized_profile.data
-        except TypeError:
-            return None
-    def get_firstname(self, object):
+class profileEditSerializer(Serializer):
+    # fields here
 
-        return object.user.first_name
-    def get_lastname(self, object):
-        return object.user.last_name
-    def get_username(self, object):
-        return object.user.username
-    def get_followers(self, object):
-        return object.following_set.count()
-    def get_followings(self, object):
-        return object.follower_set.count()
-    def get_posts(self, object):
-        return object.user_posts.count()
+
+    # validators here
+
+
+    # update here
+
+
+    # ro representation here
+
+
+
 
 
 class MediaProfileSerializer(ModelSerializer):
-
     class Meta:
         model = MediaProfile
         exclude = ["profile_image"]
@@ -113,16 +82,16 @@ class UserSerializer(Serializer):
             raise UsernameExistsException()
         elif User.objects.filter(email = attrs['email']).exists():
             raise EmailExistsException()
-        return super().validate(attrs)\
+        return super().validate(attrs)
 
 
     def create(self, validated_data):
 
-        password = make_password(validated_data["password"])
-        user = User.objects.create(
+
+        user = User.objects.create_user(
             username = validated_data['username'],
             email = validated_data['email'],
-            password = password,
+            password = validated_data["password"],
             first_name = validated_data["first_name"],
             last_name = validated_data["last_name"]
         )
@@ -138,22 +107,6 @@ class UserSerializer(Serializer):
     
     def get_last_name(self, obj):
         return obj.user.last_name
-
-class FollowRQSerializer(Serializer):
-    follows_id = serializers.IntegerField(source="follows_id")
-    follower = serializers.CharField(source="follower")
-    following = serializers.CharField(source="following")
-    is_private = serializers.BooleanField(source="is_private")
-    class Meta:
-        fields = ["follows_id", "follower", "following", "is_private"]
-
-    def create(self, validated_data):
-        follows = Follows.objects.create(
-            follower = validated_data["follower"],
-            following = validated_data["following"]
-        )
-
-        return follows    
 
    
 class FollowerSerializer(Serializer):
@@ -202,7 +155,7 @@ class PasswordChangeSerializer(Serializer):
         if attrs.get("new_password") != attrs.get("confirm_new_password"):
             raise ValidationError("password and confirm password should match")
         
-        if self.context.get("id") is None:
+        if not hasattr(self.context, id):
             return ValidationError("no id specified")
     
     def change_password(self):
@@ -210,7 +163,7 @@ class PasswordChangeSerializer(Serializer):
             account = Account.objects.get(self.context.get("id"))
         except Account.DoesNotExist:
             raise NotFoundException("No such user")
-        account.set_password(self.new_password)
+        account.user.set_password(self.new_password)
 
 class FollowRequestSerializer(ModelSerializer):
 
