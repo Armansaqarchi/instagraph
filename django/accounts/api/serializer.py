@@ -6,8 +6,6 @@ from ..models import FollowRQ
 from chat.models.messageModel import BaseMessage
 from accounts.models import MediaProfile
 from exceptions.exceptions import *
-from rest_framework.fields import Field
-from django.conf import settings
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -25,14 +23,14 @@ class ProfileViewSerializer(Serializer):
     this is for showing profile to whoever authorized to view
     """
 
-    profile_picture = serializers.SerializerMethodField()
-    firstname = serializers.SerializerMethodField()
-    lastname = serializers.SerializerMethodField()
-    username = serializers.SerializerMethodField()
+    profile_picture = serializers.CharField()
+    firstname = serializers.CharField()
+    lastname = serializers.CharField()
+    username = serializers.CharField()
     bio = serializers.CharField()
-    followers = serializers.SerializerMethodField()
-    followings = serializers.SerializerMethodField()
-    posts = serializers.SerializerMethodField()
+    followers = serializers.IntegerField()
+    followings = serializers.IntegerField()
+    posts = serializers.IntegerField()
 
     def to_representation(self, instance):
         ret = OrderedDict()
@@ -43,20 +41,43 @@ class ProfileViewSerializer(Serializer):
         ret["followers"] = instance.followers_count
         ret["followings"] = instance.followings_count
         ret["posts"] = instance.posts_list
-        ret["profile_picture"] = instance.profile_images.first().id
+        ret["profile_picture"] = instance.mediaprofile.id
         return ret
 
 class profileEditSerializer(Serializer):
-    # fields here
 
+    # fields here
+    profile_picture = serializers.ImageField()
+    firstname = serializers.CharField()
+    lastname = serializers.CharField()
+    username = serializers.CharField()
+    bio = serializers.CharField()
+    gender = serializers.ChoiceField(choices=Account.GENDER)
+
+    class Meta:
+        fields = "__all__"
+        account_attrs = ["bio", "gender"]
+        user_attrs  = ["firstname", "username", "lastname"]
 
     # validators here
+    def validate_username(self, username):
+        if User.objects.get(username = username).exists():
+            raise ValidationError("username already exists")
+        return username
+    
+
+    def update(self, instance, validated_data):
+        instance.update(**validated_data)
+        instance.user.firstname = validated_data["firstname"]
+        instance.user.lastname = validated_data["lastname"]
+        instance.user.username = validated_data["username"]
+        image = validated_data["profile_picture"]
+        instance.mediaProfile.save_image(image)
 
 
-    # update here
 
-
-    # ro representation here
+    def to_representation(self, instance):
+        return super().to_representation(instance)
 
 
 
@@ -86,8 +107,6 @@ class UserSerializer(Serializer):
 
 
     def create(self, validated_data):
-
-
         user = User.objects.create_user(
             username = validated_data['username'],
             email = validated_data['email'],
@@ -124,7 +143,7 @@ class FollowerSerializer(Serializer):
     
     def get_following_image(self, obj):
         try:
-            return obj.profile_images.first().id
+            return obj.mediaprofile.id
         except AttributeError:
             return None
 
@@ -142,10 +161,9 @@ class FollowingSerializer(Serializer):
         return obj.user.username
     
     def get_following_image(self, obj):
-        try:
-            return obj.profile_images.first().id
-        except AttributeError:
-            return None
+        if hasattr(obj, "mediaprofile"):
+            return getattr(obj.mediaprofile, "id", None)
+        return None
         
 class PasswordChangeSerializer(Serializer):
     new_password = serializers.CharField()

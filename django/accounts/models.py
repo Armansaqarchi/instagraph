@@ -1,9 +1,12 @@
+from typing import Iterable, Optional
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from uuid import uuid4
+from rest_framework.serializers import Field
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
+from PIL import Image
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
@@ -59,15 +62,10 @@ class Account(models.Model):
         
     
 
-    def update(self, updated_data):
-        if isinstance(updated_data, dict):
-            for key, value in updated_data:
-                if not hasattr(self, key):
-                    raise ValidationError(f"no such attribute : {key}")
-                self.key = value 
-        else:
-            raise ValidationError("invalid argument type : update_data object must be of type 'dict' ")
-        
+    def update(self, **kwargs):
+        for key, value in kwargs:
+            if hasattr(self, key):
+                setattr(self, key, value)  
         self.save()
         
 
@@ -156,9 +154,14 @@ class Activation(models.Model):
 
 class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="profile_images")
+    user = models.OneToOneField(Account, on_delete=models.CASCADE)
     profile_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_PROFILE , null=True, upload_to=settings.PROFILE_UPLOAD_DIR)
     set_at = models.DateField(auto_now_add=True)
+
+
+    def save_image(self, image):
+        # incomplete
+        pass
 
     class Meta:
         db_table = "profile"
