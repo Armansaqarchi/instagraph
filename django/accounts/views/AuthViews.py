@@ -3,9 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from ..models import Account
-from ..permissions.accountPermissions import (
-    OwnerPermission
-)
+from ..permissions import *
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
@@ -15,7 +14,7 @@ from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
 from ..api.serializer import (
     UserSerializer,
-    ProfileSerializer,
+    ProfileViewSerializer,
     EmailExistsException,
     UsernameExistsException
 )
@@ -25,7 +24,6 @@ from rest_framework.permissions import (
 from rest_framework.status import(
     HTTP_200_OK,
     HTTP_201_CREATED,
-    HTTP_208_ALREADY_REPORTED,
 )
 
 
@@ -55,7 +53,7 @@ class UserProfileView(APIView):
         try:
             account = Account.objects.get(id = pk)
             self.has_object_permission(request, obj=account)    
-            serializer = ProfileSerializer(account)
+            serializer = ProfileViewSerializer(account)
             #sending json response containing the Account info, use 'Account' to access it
             return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
 
@@ -86,6 +84,8 @@ class LoginView(APIView):
 
 
 class ProfileView(ModelViewSet):
+
+    parser_classes = [MultiPartParser]
     permission_classes = [OwnerPermission]
     def create(self, request) -> Response:
         user = UserSerializer(data=request.data)
@@ -106,25 +106,17 @@ class ProfileView(ModelViewSet):
             raise AlreadyExistsException("The username has already been taken by another user", "username_exists")
     
 
-    def update(self, request):
-        new_profile =  request.data
-        id = getattr(request.GET, "id", None)
-        if id:
-            account = Account.objects.get(id = id)
-        else:
-            account = request.user.account
-        user = account.user
+    def update(self, request, pk):
+        print(request.data)
+        return Response(status=HTTP_200_OK)
         
-
-        with transaction.atomic():
-            account.save()
-            user.save()
-        return Response({"Message" : "user successfully updated", "Status" : "Success", "Code": "user_updated"})
-        
-
-
-        
-
+    
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+    
+    
+    
 class Activate(APIView):
 
     def dispatch(self, request, *args, **kwargs):

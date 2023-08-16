@@ -23,7 +23,8 @@ class ProfileViewSerializer(Serializer):
     this is for showing profile to whoever authorized to view
     """
 
-    profile_picture = serializers.CharField()
+
+    profile_picture= serializers.CharField(read_only = True)
     firstname = serializers.CharField()
     lastname = serializers.CharField()
     username = serializers.CharField()
@@ -41,13 +42,22 @@ class ProfileViewSerializer(Serializer):
         ret["followers"] = instance.followers_count
         ret["followings"] = instance.followings_count
         ret["posts"] = instance.posts_list
-        ret["profile_picture"] = instance.mediaprofile.id
+        ret["profile_picture_id"] = instance.mediaprofile.id
         return ret
 
 class profileEditSerializer(Serializer):
+    """
+    when the user wants to edit its profile
+    """
 
-    # fields here
-    profile_picture = serializers.ImageField()
+    # the behavior of picture field depends on :
+    # when representing the data, this field must be represented as an id indicating the id of mediaProfile
+    # when storing the data, profie picture act as an imagefield
+
+    profile_picture = serializers.ImageField(write_only = True)
+    profile_picture_id = serializers.CharField(read_only = True)
+
+
     firstname = serializers.CharField()
     lastname = serializers.CharField()
     username = serializers.CharField()
@@ -118,8 +128,7 @@ class UserSerializer(Serializer):
         return user
     
     def update(self, instance, validated_data):
-        print("dsfafsaffsa", instance)
-        print(validated_data)
+        pass
 
     def get_first_name(self, obj):
         return obj.user.first_name

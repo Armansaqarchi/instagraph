@@ -16,10 +16,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from ..models import Follows, FollowRQ
-from ..permissions.accountPermissions import (
-    IsFollowerPermission,
-    OwnerPermission
-)
+from ..permissions import *
 from rest_framework.views import APIView
 from ..models import Account
 from rest_framework.response import Response
