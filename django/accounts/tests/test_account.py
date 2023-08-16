@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
-from .models import Follows
-
+from ..models import Follows
+from posts.models import Post
 
 class AccountTestCase(APITestCase):
 
@@ -41,6 +41,14 @@ class AccountTestCase(APITestCase):
             )
             for user in self.users_list
         )
+        self.post1 = Post.objects.create(
+            user = self.user5.account,
+            description = "why the lonely rainy forest?"
+        )
+        self.post2 = Post.objects.create(
+            user = self.user5.account,
+            description = "why not the lonely rainy forest?"
+        )
         
     def test_follower_list(self): 
         followers = self.user5.account.followers_list
@@ -50,3 +58,8 @@ class AccountTestCase(APITestCase):
     def test_following_list(self):
         followings = self.user5.account.followings_list
         self.assertEqual(4, len(followings))
+    
+    def test_user_posts(self):
+        posts = self.user5.account.user_posts.all()
+        self.assertEqual(2, len(posts))
+

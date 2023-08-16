@@ -1,5 +1,6 @@
 from django.urls import re_path, path
 from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from .views.AuthViews import (
     UserProfileView,
@@ -14,13 +15,12 @@ from .views.FollowViews import(
     FollowingList,
     RQList
 )
-from django.views.generic import TemplateView
 
 
 urlpatterns = [
     re_path(r"^login", LoginView.as_view(), name = "login"),
-    re_path(r"^profile/(?P<pk>[0-9]+)", UserProfileView.as_view(), name = "profile"),
-    re_path(r"^signup", ProfileView.as_view(), name="register"),
+    re_path(r"^profile/(?P<pk>[0-9]+)", ProfileView.as_view({"get" : "retrieve", "put" : "update", "delete" : "destroy"}), name = "profile"),
+    re_path(r"profile", ProfileView.as_view({"get" : "list", "post" : "create"})),
     re_path(r"^followers/(?P<id>[0-9]+)$", FollowersView.as_view(), name="followers"),
     re_path(r"^activate/(?P<id>.+)[0-9]+/$", Activate.as_view(), name="activate"),
     re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FriendFollowRQ.as_view(), name= "follow_req"),

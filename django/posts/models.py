@@ -5,7 +5,7 @@ from django.conf import settings
 
 class Post(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="user_posts")
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="user_posts")
     description = models.CharField(max_length=500)
     likes = models.PositiveBigIntegerField(default = 0)
     comments = models.PositiveBigIntegerField(default = 0)

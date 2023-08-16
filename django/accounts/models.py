@@ -47,7 +47,7 @@ class Account(models.Model):
     
     @property
     def posts_list(self):
-        return Account.user_posts
+        return self.user_posts
     
     @property
     def followers_count(self):
@@ -106,7 +106,6 @@ class FollowRQ(models.Model):
     ("False", "NO"),
     ("pending", "PENDING")
     )
-
 
     id = models.UUIDField(default=uuid4, null=False, primary_key=True, editable = False, unique=True)
     sender = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="sent_set") # temporarily True, in debugging mode
