@@ -20,6 +20,7 @@ from .views.FollowViews import(
 urlpatterns = [
     re_path(r"^login", LoginView.as_view(), name = "login"),
     re_path(r"^profile/(?P<pk>[0-9]+)", ProfileView.as_view({"get" : "retrieve", "put" : "update", "delete" : "destroy"}), name = "profile"),
+    re_path(r"profile/image/(?P<pk>[0-9]+)", ProfileView.as_view({"patch" : "update_profile_image"})),
     re_path(r"profile", ProfileView.as_view({"get" : "list", "post" : "create"})),
     re_path(r"^followers/(?P<id>[0-9]+)$", FollowersView.as_view(), name="followers"),
     re_path(r"^activate/(?P<id>.+)[0-9]+/$", Activate.as_view(), name="activate"),

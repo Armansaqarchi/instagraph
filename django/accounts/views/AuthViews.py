@@ -12,11 +12,13 @@ from rest_framework.exceptions import ValidationError
 from ..models import Activation
 from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
+from ..models import MediaProfile
 from ..api.serializer import (
     UserSerializer,
     ProfileViewSerializer,
     EmailExistsException,
-    UsernameExistsException
+    UsernameExistsException,
+    ProfilePictureEditSerializer
 )
 from rest_framework.permissions import (
     SAFE_METHODS,
@@ -24,6 +26,7 @@ from rest_framework.permissions import (
 from rest_framework.status import(
     HTTP_200_OK,
     HTTP_201_CREATED,
+    HTTP_206_PARTIAL_CONTENT
 )
 
 
@@ -62,6 +65,7 @@ class UserProfileView(APIView):
 
 
 class LoginView(APIView):
+    
     def post(self, request) -> Response:
         if request.user.is_authenticated:
             raise AlreadyExistsException("user have already authenticated", code= "already_authenticated")
@@ -87,7 +91,15 @@ class ProfileView(ModelViewSet):
 
     parser_classes = [MultiPartParser]
     permission_classes = [OwnerPermission]
+    queryset = Account.objects.all()
+
+
+
+    def get_object(self):
+        return super().get_object()
+
     def create(self, request) -> Response:
+        
         user = UserSerializer(data=request.data)
         try:
             user.is_valid(raise_exception=True)
@@ -104,16 +116,32 @@ class ProfileView(ModelViewSet):
             raise AlreadyExistsException("The Email has already been taken by another user", code="email_exists")
         except UsernameExistsException:
             raise AlreadyExistsException("The username has already been taken by another user", "username_exists")
+
+    def update_profile_image(self, request, pk):
+        account = self.get_object()
+        serializer = ProfilePictureEditSerializer(instance= account.mediaprofile, data=request.data, partial = True)
+        if serializer.is_valid(raise_exception = True):
+            serializer.save()
+        return Response({"data" : serializer.data, "Message" : "profile picture updated", "Code" : "profile_update", "Status" : "success"},
+                         status=HTTP_206_PARTIAL_CONTENT)
     
 
     def update(self, request, pk):
-        print(request.data)
-        return Response(status=HTTP_200_OK)
-        
-    
+        return super().update(request, partial = True)
     
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+    
+    def perform_destroy(self, instance):
+        """
+        delete the user so the account will automatically be deleted
+        """
+        instance.user.delete()
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = ProfileViewSerializer
+        return super().retrieve(request, *args, **kwargs)
+    
     
     
     

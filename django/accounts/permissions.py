@@ -17,4 +17,6 @@ class OwnerPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
             return True
-        return True if obj.id == request.user.account.id else False
+        if request.user.is_authenticated:
+            return True if obj.user.id == request.user.account.id else False
+        return False

@@ -6,6 +6,7 @@ from ..models import FollowRQ
 from chat.models.messageModel import BaseMessage
 from accounts.models import MediaProfile
 from exceptions.exceptions import *
+from rest_framework.serializers import ImageField
 from rest_framework.serializers import(
     Serializer,
     ModelSerializer
@@ -24,7 +25,7 @@ class ProfileViewSerializer(Serializer):
     """
 
 
-    profile_picture= serializers.CharField(read_only = True)
+    profile_picture= serializers.CharField()
     firstname = serializers.CharField()
     lastname = serializers.CharField()
     username = serializers.CharField()
@@ -35,28 +36,21 @@ class ProfileViewSerializer(Serializer):
 
     def to_representation(self, instance):
         ret = OrderedDict()
-        ret["firstname"] = instance.user.firstname
-        ret["lastname"] = instance.user.lastname
+        ret["firstname"] = instance.user.first_name
+        ret["lastname"] = instance.user.last_name
         ret["username"] = instance.user.username
         ret["bio"] = instance.bio
         ret["followers"] = instance.followers_count
         ret["followings"] = instance.followings_count
         ret["posts"] = instance.posts_list
         ret["profile_picture_id"] = instance.mediaprofile.id
+        print("retttttttttttt", ret)
         return ret
 
-class profileEditSerializer(Serializer):
+class profileEditSerializer(ModelSerializer):
     """
     when the user wants to edit its profile
     """
-
-    # the behavior of picture field depends on :
-    # when representing the data, this field must be represented as an id indicating the id of mediaProfile
-    # when storing the data, profie picture act as an imagefield
-
-    profile_picture = serializers.ImageField(write_only = True)
-    profile_picture_id = serializers.CharField(read_only = True)
-
 
     firstname = serializers.CharField()
     lastname = serializers.CharField()
@@ -77,26 +71,22 @@ class profileEditSerializer(Serializer):
     
 
     def update(self, instance, validated_data):
-        instance.update(**validated_data)
         instance.user.firstname = validated_data["firstname"]
         instance.user.lastname = validated_data["lastname"]
         instance.user.username = validated_data["username"]
-        image = validated_data["profile_picture"]
-        instance.mediaProfile.save_image(image)
+
+        # account model update method
+        instance.update(gender = validated_data["gender"], bio = validated_data["bio"])
+        instance.user.save()
+
+        return instance
 
 
 
-    def to_representation(self, instance):
-        return super().to_representation(instance)
-
-
-
-
-
-class MediaProfileSerializer(ModelSerializer):
+class ProfilePictureEditSerializer(ModelSerializer):
     class Meta:
         model = MediaProfile
-        exclude = ["profile_image"]
+        fields = "__all__"
 
 class UserSerializer(Serializer):
     first_name = serializers.CharField()

@@ -3,7 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from uuid import uuid4
-from rest_framework.serializers import Field
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from PIL import Image
@@ -47,17 +46,18 @@ class Account(models.Model):
     
     @property
     def posts_list(self):
-        return self.user_posts
+        return self.user_posts.all()
     
     @property
     def followers_count(self):
         followers_id = self.following_set.values_list("follower", flat = True)
-        return Account.objects,filter(Q(id__in = followers_id).count())
+        return Account.objects.filter(Q(id__in = followers_id)).count()
+
     
     @property
     def followings_count(self):
         followings_id = self.follower_set.values_list("following", flat = True)
-        return Account.objects.filter(Q(id__in = followings_id).count())
+        return Account.objects.filter(Q(id__in = followings_id)).count()
     
         
     
@@ -157,10 +157,6 @@ class MediaProfile(models.Model):
     profile_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_PROFILE , null=True, upload_to=settings.PROFILE_UPLOAD_DIR)
     set_at = models.DateField(auto_now_add=True)
 
-
-    def save_image(self, image):
-        # incomplete
-        pass
 
     class Meta:
         db_table = "profile"

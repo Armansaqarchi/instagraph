@@ -258,9 +258,9 @@ ENABLE_USER_ACTIVATION = False
 
 USER_DEFAULT_PROFILE = "static/images/users/profile/default.png"
 
-PROFILE_UPLOAD_DIR = "static/images/users/"
+PROFILE_UPLOAD_DIR = "users/"
 
-STORY_UPLOAD_DIR = "static/images/users/story/default.png"
+STORY_UPLOAD_DIR = "users/story/default.png"
 
 USER_DEFAULT_STORY = "static/images/stories"
 
