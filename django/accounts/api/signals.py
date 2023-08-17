@@ -20,5 +20,3 @@ def create_Account(sender, instance, created, **kwargs):
 
 
     return user
-
-
