@@ -11,8 +11,7 @@ from django.contrib.auth import login, authenticate
 from rest_framework.exceptions import ValidationError
 from ..models import Activation
 from rest_framework.viewsets import ModelViewSet
-from django.db import transaction
-from ..models import MediaProfile
+from rest_framework.pagination import PageNumberPagination
 from ..api.serializer import (
     UserSerializer,
     ProfileViewSerializer,
@@ -33,6 +32,7 @@ from rest_framework.status import(
 from exceptions.exceptions import *
 
 logger = logging.getLogger(__name__)
+
 
 
 class UserProfileView(APIView):
@@ -89,14 +89,22 @@ class LoginView(APIView):
 
 class ProfileView(ModelViewSet):
 
+    errors = {
+        "invalid" : "Invalid format for the request body" ,
+        "email_exists" : "The Email has already been taken by another user",
+        "username_exists" : "The Username has already been taken by another user"
+    }
+
+    class ProfilePaginator(PageNumberPagination):
+        page_size_query_param = 20
+        page_query_param = "page"
+        page_size = 20
+
     parser_classes = [MultiPartParser]
-    permission_classes = [OwnerPermission]
+    permission_classes = [IsOwnerPermission]
     queryset = Account.objects.all()
+    pagination_class = ProfilePaginator
 
-
-
-    def get_object(self):
-        return super().get_object()
 
     def create(self, request) -> Response:
         
@@ -105,17 +113,20 @@ class ProfileView(ModelViewSet):
             user.is_valid(raise_exception=True)
             user = user.save()
             token = user.account.token
-            return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
-                                    "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
-                                        HTTP_201_CREATED)
+
         except ValidationError as e:
             self.kwargs["Fields"] = {field : str(e.detail[field][0]) for field in e.detail}
-            print(e.detail)
-            raise BadRequestException("invalid format for the request body", "signup_fields_error")
+            raise BadRequestException(self.errors["invalid"], "signup_fields_error")
+        
         except EmailExistsException:
-            raise AlreadyExistsException("The Email has already been taken by another user", code="email_exists")
+            raise AlreadyExistsException(self.errors["email_exists"], code="email_exists")
+        
         except UsernameExistsException:
-            raise AlreadyExistsException("The username has already been taken by another user", "username_exists")
+            raise AlreadyExistsException(self.errors["username_exists"], code="username_exists")
+        
+        return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
+                        "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
+                            HTTP_201_CREATED)
 
     def update_profile_image(self, request, pk):
         account = self.get_object()
@@ -125,7 +136,6 @@ class ProfileView(ModelViewSet):
         return Response({"data" : serializer.data, "Message" : "profile picture updated", "Code" : "profile_update", "Status" : "success"},
                          status=HTTP_206_PARTIAL_CONTENT)
     
-
     def update(self, request, pk):
         return super().update(request, partial = True)
     
@@ -140,7 +150,11 @@ class ProfileView(ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = ProfileViewSerializer
-        return super().retrieve(request, *args, **kwargs)
+        response = super().retrieve(request, *args, **kwargs)
+        response.data = {"Profile" : response.data, "Message" : "user detail",
+                               "Status" : "success", "Code" : "user_profile"}
+        
+        return response
     
     
     

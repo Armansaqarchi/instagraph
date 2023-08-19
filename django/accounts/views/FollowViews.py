@@ -7,12 +7,14 @@ from ..api.serializer import (
     FollowingSerializer,
     FollowerSerializer
 )
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 from django.db import IntegrityError
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from rest_framework.generics import GenericAPIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from ..models import Follows, FollowRQ
@@ -26,8 +28,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.status import(
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK,
-    HTTP_208_ALREADY_REPORTED,
-    HTTP_403_FORBIDDEN
+    HTTP_204_NO_CONTENT
 )
 import traceback
 from django.conf import settings
@@ -37,45 +38,75 @@ from exceptions.exceptions import *
 logger = logging.getLogger(__name__)
 
 
+class FollowersAPIView(ModelViewSet, GenericAPIView):
 
-class FollowersView(ListAPIView):
-
-    permission_classes = [IsFollowerPermission]
-    login_url = "accounts/login"
-    paginate_by = 20
+    class FollowerPaginator(PageNumberPagination):
+        page_query_param = "page"
+        page_size = 30
 
 
-    def get_queryset(self, id):
-        account = get_object_or_404(Account, id=id)
-        followings_id = account.following_set.values_list('follower', flat = True)
-        return Account.objects.filter(id__in = followings_id)
-       
-    def get_paginator(self, request, id):
+    pagination_class = FollowerPaginator
+    errors = {
+        "forbidden" : "Access Denied",
+        "no_such_fr" : "No such friend request",
+        "already_follows" : "The user is already following you"
+    }
+    
+    def get_queryset(self):
+        """
+        returns queryset based on http method provided in request header
+        """
+        QUERYSET_CASES = {
+            "get" : Account,
+            "delete" : Follows,
+            "post" : FollowRQ
+        }
+        return QUERYSET_CASES[self.request.method.lower()]
+    
+
+    def filter_queryset(self, id):
+        account = self.get_object(self.get_queryset(), id = id)
+        followings_id = account.following_list.values_list('follower', flat = True)
+        return account, Account.objects.filter(id__in = followings_id)     
+
+
+    def list(self, id):
         try:
-            items = self.get_queryset(id)
-            paginator = Paginator(items, self.paginate_by)
-            #getting page num from url params
-            page_num = request.GET.get("page")
-            page_obj = paginator.get_page(page_num)
-        except PageNotAnInteger:
-            raise BadRequestException("Page number must be an integer", code = "page_not_a_number")
-        except EmptyPage:
-            raise BadRequestException("The page number exceedes maximum number", code = "empty_page")
-        return page_obj
-        
-
-    def get(self, request, id):
-        try:
-            account = get_object_or_404(Account, id=id)
-            self.check_object_permissions(request, account)
-            page_objs = self.get_paginator(request, id).object_list
-            serializer = FollowerSerializer(page_objs, many=True)
-            followers_count = account.following_set.count()
+            account, queryset = self.filter_queryset(id)
+            page = self.paginate_queryset(queryset=queryset)
+            serializer = self.serializer_class(page, many=True)
+            followers_count = account.followers_list
             return Response({"Message" : "follower page is ready", "page_obj" : serializer.data, "followers_number" : followers_count,
                               "Status" : "success", "Code" : "page_is_up"}, status=HTTP_200_OK)
-        except PermissionDenied as e:
-            raise ForibiddenException("Access denied", code = "permission_denied")
+        except PermissionDenied:
+            raise ForibiddenException(self.errors["forbidden"], code = "permission_denied")
+        
+    def destroy(self, request, id):
+        self.queryset = Follows.objects.all()
+        follow = self.get_object()
+        self.perform_destroy(follow)
+        return Response({"Message" : "follower removed", "Code" : "follower_remove", "Status" : "Success"},
+                         status=HTTP_204_NO_CONTENT)
 
+    def create(self, request, id):
+        self.queryset = FollowRQ.objects.all()
+        try:
+            fr = self.get_object()
+        except Http404:
+            raise NotFoundException(self.errors["no_such_fr"], code="fr_not_found")
+        already_follows = Follows.objects.filter(Q(follower__id = fr.sender.id) & Q(following__id = fr.receiver.id)).exists()
+        if already_follows:
+            raise AlreadyExistsException(self.errors["already_follow"])
+        Follows.objects.create(
+            follower = fr.sender,
+            following = fr.receiver
+        )
+        return Response({"Message" : "follow request accepted", "Status" : "Success", "Code" : "following_done"},
+                         status=HTTP_200_OK)
+
+
+
+        
 
 
 class FollowingList(ListAPIView):
@@ -159,7 +190,7 @@ class FriendFollowRQ(APIView):
 
 class AcceptRQ(APIView):
 
-    permission_classes = [OwnerPermission]
+    permission_classes = [IsOwnerPermission]
     login_url = settings.LOGIN_URL
 
     def get(self, request, RQ_id) -> Response:
@@ -193,7 +224,7 @@ class AcceptRQ(APIView):
     
 
 class RQList(LoginRequiredMixin, ListAPIView):
-    permission_classes = [OwnerPermission]
+    permission_classes = [IsOwnerPermission]
     paginate_by = 20
     login_url = settings.LOGIN_REDIRECT_URL
 
