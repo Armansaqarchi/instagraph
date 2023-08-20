@@ -54,7 +54,6 @@ class AccountTestCase(APITestCase):
         followers = self.user5.account.followers_list
         self.assertEqual(4, len(followers))
     
-
     def test_following_list(self):
         followings = self.user5.account.followings_list
         self.assertEqual(4, len(followings))
@@ -62,4 +61,5 @@ class AccountTestCase(APITestCase):
     def test_user_posts(self):
         posts = self.user5.account.user_posts.all()
         self.assertEqual(2, len(posts))
+
 
