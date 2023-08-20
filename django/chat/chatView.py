@@ -12,7 +12,6 @@ import datetime
 class ChatListPaginationNumber(PageNumberPagination):
     page_size = 15
 
-
 class GetMessages(APIView):
     paginate_by = 80
 
@@ -46,7 +45,6 @@ class getChatList(APIView):
     2- user latest message related to each private chat,
     this structure takes O(private_chats_per_page) and for any message is sent, takes O(1) to update the related chat
     """
-
 
     def get(self, request):
         account = request.user.account

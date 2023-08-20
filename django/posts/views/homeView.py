@@ -4,7 +4,7 @@ from accounts.models import Story
 from django.http.response import HttpResponse
 from rest_framework.views import APIView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from accounts.views.FollowViews import OwnerPermission
+from accounts.views.FollowViews import IsOwnerPermission
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from ..models import Post
@@ -33,7 +33,7 @@ class StoryPagination(PageNumberPagination):
 
 
 class HomeView(ListAPIView):
-    permission_classes = [OwnerPermission, IsAuthenticated]
+    permission_classes = [IsOwnerPermission, IsAuthenticated]
     login_url = settings.LOGIN_URL
     
 
