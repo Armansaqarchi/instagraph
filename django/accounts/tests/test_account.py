@@ -61,5 +61,6 @@ class AccountTestCase(APITestCase):
     def test_user_posts(self):
         posts = self.user5.account.user_posts.all()
         self.assertEqual(2, len(posts))
+        
 
 
