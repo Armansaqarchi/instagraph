@@ -4,8 +4,15 @@ import json
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Perform any necessary setup when a connection is established
-        await self.accept()
+        # header = self.scope.get("headers")
+        # if not hasattr(header, "chat_room"):
+        #     await self.close()
+        # chat_room = header["chat_room"]
+        # self.channel_layer.
+        # if self.scope.get("user").is_authenticated:
+        #     await self.accept()
+        pass
+
 
     async def disconnect(self, close_code):
         # Perform any necessary cleanup when a connection is closed
@@ -15,8 +22,3 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Handle incoming messages from the client
         print("dsfagsags", self.scope)
         await self.send(text_data=text_data)
-
-    async def echo(self, event):
-        # Handle the 'echo' event, which is triggered by the test case
-        message = event['message']
-        await self.send(text_data=message)
