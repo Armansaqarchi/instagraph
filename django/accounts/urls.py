@@ -14,9 +14,6 @@ from .views.FollowViews import(
     FollowersListAPIView,
     FollowingAPIView,
     FollowRQListAPIView,
-    FriendFollowRQ,
-    AcceptRQ,
-    RQList
 )
 
 
@@ -31,9 +28,9 @@ urlpatterns = [
     re_path(r"^following/followings", FollowingListAPIView.as_view()),
     re_path(r"^following/(?P<pk>[\w+-]+)", FollowingAPIView.as_view({"get" : "create", "delete" : "destroy"})),
     re_path(r"^activate/(?P<id>.+)[0-9]+/$", Activate.as_view(), name="activate"),
-    re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FriendFollowRQ.as_view(), name= "follow_req"),
-    re_path(r"^accept_req/(?P<RQ_id>[\w+-]+)", AcceptRQ.as_view(), name="accept_req"),
-    re_path(r"^reqList/(?P<id>\d+)$", RQList.as_view(), name="req_list"),
+    # re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FriendFollowRQ.as_view(), name= "follow_req"),
+    # re_path(r"^accept_req/(?P<RQ_id>[\w+-]+)", AcceptRQ.as_view(), name="accept_req"),
+    # re_path(r"^reqList/(?P<id>\d+)$", RQList.as_view(), name="req_list"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
