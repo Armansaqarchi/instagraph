@@ -43,11 +43,13 @@ class ProfileViewSerializer(Serializer):
         ret["followers"] = instance.followers_count
         ret["followings"] = instance.followings_count
         ret["posts"] = instance.posts_list
-        ret["profile_picture_id"] = instance.mediaprofile.id
-        print("retttttttttttt", ret)
+        try:
+            ret["profile_picture"] = instance.mediaprofile.id
+        except AttributeError:
+            pass
         return ret
 
-class profileEditSerializer(ModelSerializer):
+class profileEditSerializer(Serializer):
     """
     when the user wants to edit its profile
     """
@@ -65,25 +67,51 @@ class profileEditSerializer(ModelSerializer):
 
     # validators here
     def validate_username(self, username):
-        if User.objects.get(username = username).exists():
+        qs = User.objects.filter(username = username)
+        print(qs)
+        if not qs:
+            pass
+        elif not len(qs) == 1 or qs.first() != self.instance.user: 
             raise ValidationError("username already exists")
         return username
     
 
     def update(self, instance, validated_data):
-        instance.user.firstname = validated_data["firstname"]
-        instance.user.lastname = validated_data["lastname"]
-        instance.user.username = validated_data["username"]
+        instance.user.first_name = validated_data.get("firstname", instance.user.first_name)
+        instance.user.last_name = validated_data.get("lastname", instance.user.last_name)
+        instance.user.username = validated_data.get("username", instance.user.username)
 
         # account model update method
-        instance.update(gender = validated_data["gender"], bio = validated_data["bio"])
+        instance.update(gender = validated_data.get("gender", instance.gender), bio = validated_data.get("bio", instance.bio))
         instance.user.save()
 
         return instance
+    
+    def to_representation(self, instance):
+        ret = OrderedDict()
+        ret["firstname"] = instance.user.first_name
+        ret["lastname"] = instance.user.last_name
+        ret["username"] = instance.user.username
+        ret["bio"] = instance.bio
+        ret["gender"] = instance.gender
 
+
+        return ret
 
 
 class ProfilePictureEditSerializer(ModelSerializer):
+
+    def update(self, instance, validated_data):
+        """
+        overrided method for update()
+        a problem with saving files and images is that django automatically does not handle deletion of previous image
+        due to cases in which image might have some references to other parts of the application
+        but when its safe to delete, it may lead to performance optimization
+        """
+        instance.profile_image.delete(save = False)
+        super().update(instance, validated_data)
+        return instance
+
     class Meta:
         model = MediaProfile
         fields = "__all__"

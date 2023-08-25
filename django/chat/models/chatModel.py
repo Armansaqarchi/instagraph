@@ -4,8 +4,6 @@ from uuid import uuid4
 from accounts.models import Account
 
 
-
-
 class Chat(models.Model):
 
     CHAT_TYPE = (
@@ -13,23 +11,23 @@ class Chat(models.Model):
         ("GROUP", "group")
     )
 
-    thread = models.AutoField()
-    created = models.DateTimeField(auto_now_add=True, editable=False)
-    type = models.CharField(choices=CHAT_TYPE)
+    thread = models.UUIDField(default=uuid4, primary_key=True, editable=False, blank=False, null=False)
+    created = models.DateField(auto_now_add=True)
+    type = models.CharField(choices=CHAT_TYPE, max_length=50)
 
 class GroupChat(models.Model):
-    chat_id = models.OneToOneField(unique=True)
-    name = models.CharField()
+    chat_id = models.OneToOneField(Chat, unique=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
 
 class PrivateChat(models.Model):
-    chat_id = models.OneToOneField(unique=True)
-    member1 = models.OneToOneField(Account, on_delete=models.DO_NOTHING)
-    member2 = models.OneToOneField(Account, on_delete=models.DO_NOTHING)
-
+    chat_id = models.OneToOneField(Chat, unique=True, on_delete=models.CASCADE)
+    member1 = models.OneToOneField(Account, on_delete=models.DO_NOTHING, related_name="member1")
+    member2 = models.OneToOneField(Account, on_delete=models.DO_NOTHING, related_name="member2")
 
     class Meta:
-        constaints = [
-            models.CheckConstraint(~models.Q(member1 = models.F("member2")))
+        unique_together = ["member1", "member2"]
+        constraints = [
+            models.CheckConstraint(check = ~models.Q(member1 = models.F("member2")), name="no_chat_yourself")
         ]
 
 class GroupMedia(models.Model):

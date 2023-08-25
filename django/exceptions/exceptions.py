@@ -4,31 +4,32 @@ from rest_framework import exceptions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import set_rollback
 from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import InvalidToken
 
 
 def handle_exception(exc, context):
+
     if isinstance(exc, Http404):
         exc = exceptions.NotFound()
-    elif isinstance(exc, PermissionDenied):
-        exc = exceptions.PermissionDenied()
+    elif isinstance(exc, AuthenticationFailed):
+        exc.detail = "failed to Authenticate user"
     elif isinstance(exc, InvalidToken):
         exc.detail = "Token is invalid or maybe expired"
 
-    if isinstance(exc, exceptions.APIException):
-        detail = getattr(exc, "detail", None)
-        code = getattr(exc, "default_code", None)
-        status_code = getattr(exc, "status_code", None)
-        data = {"Message" : detail, "Code" : code, "Status" : "Error"}
-        errors = context.get("kwargs")
-        if errors:
-            data.update(errors)
-        # rolling back all the changes made before the exception occured
-        # this might work if ATORMIC_REQUESTS is set in inner database configuration
-        set_rollback()
-        return Response(data, status=status_code, exception=True)
 
-    return None
+    detail = getattr(exc, "detail", None)
+    code = getattr(exc, "default_code", None)
+    status_code = getattr(exc, "status_code", None)
+    data = {"Message" : detail, "Code" : code, "Status" : "Error"}
+    errors = context.get("kwargs")
+    if errors:
+        data.update(errors)
+    # rolling back all the changes made before the exception occured
+    # this might work if ATORMIC_REQUESTS is set in inner database configuration
+    set_rollback()
+    return Response(data, status=status_code, exception=True)
+
 
 
 class UnauthorizedException(APIException):

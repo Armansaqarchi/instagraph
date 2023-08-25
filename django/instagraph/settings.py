@@ -30,8 +30,8 @@ DEBUG = True
 ALLOWED_HOSTS = ["0.0.0.0", "49.13.60.63", "127.0.0.1", "localhost"]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=59),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
@@ -149,24 +149,24 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'USER' : 'mahan',
-        'PASSWORD' : 'test123123',
-        "HOST" : "localhost",
-        "PORT" : "5432",
-        "NAME" : "postgres"
-    }
-}
-
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': 'mydatabase', # This is where you put the name of the db file. 
-#                  # If one doesn't exist, it will be created at migration time.
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'USER' : 'mahan',
+#         'PASSWORD' : 'test123123',
+#         "HOST" : "localhost",
+#         "PORT" : "5432",
+#         "NAME" : "postgres"
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3', # This is where you put the name of the db file. 
+                 # If one doesn't exist, it will be created at migration time.
+    }
+}
 
 CACHES = {
     "default": {

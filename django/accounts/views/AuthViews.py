@@ -10,11 +10,13 @@ from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
 from rest_framework.exceptions import ValidationError
 from ..models import Activation
+from rest_framework.parsers import JSONParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
 from ..api.serializer import (
     UserSerializer,
     ProfileViewSerializer,
+    profileEditSerializer,
     EmailExistsException,
     UsernameExistsException,
     ProfilePictureEditSerializer
@@ -100,10 +102,21 @@ class ProfileView(ModelViewSet):
         page_query_param = "page"
         page_size = 20
 
-    parser_classes = [MultiPartParser]
-    permission_classes = [IsOwnerPermission]
+    parser_classes = [MultiPartParser, JSONParser]
+    serializer_class = profileEditSerializer
     queryset = Account.objects.all()
     pagination_class = ProfilePaginator
+
+
+    def get_permissions(self):
+
+        PERMISSION_CASES = {
+            "get" : IsFollowerPermission,
+            "patch" : IsOwnerPermission,
+            "post" : IsOwnerPermission
+        }
+
+        return [PERMISSION_CASES[self.request.method.lower()]()]
 
 
     def create(self, request) -> Response:
@@ -137,10 +150,17 @@ class ProfileView(ModelViewSet):
                          status=HTTP_206_PARTIAL_CONTENT)
     
     def update(self, request, pk):
-        return super().update(request, partial = True)
+        try:
+            return super().update(request, partial = True)
+        except ValidationError as exc:
+            self.kwargs["Fields"] = {field : str(exc.detail[field][0]) for field in exc.detail}
+            raise BadRequestException("invalid request body format", code = "invalid_account_format")
+            
     
     def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+        response = super().destroy(request, *args, **kwargs)
+        response.data = {"Message" : "user successfully deleted", "Status" : "Success", "Code" : "user_deleted"}
+        return response
     
     def perform_destroy(self, instance):
         """
@@ -155,6 +175,9 @@ class ProfileView(ModelViewSet):
                                "Status" : "success", "Code" : "user_profile"}
         
         return response
+    
+
+    
     
     
     

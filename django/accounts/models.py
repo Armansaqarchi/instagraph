@@ -63,7 +63,7 @@ class Account(models.Model):
     
 
     def update(self, **kwargs):
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)  
         self.save()
@@ -112,7 +112,7 @@ class FollowRQ(models.Model):
     recipient = models.ForeignKey(Account, on_delete=models.CASCADE, null=True, related_name="received_set")
     is_read = models.BooleanField(default=False)
     accepted = models.CharField(choices=FR_STATUS, default="PENDING", max_length=25)
-    sent_at = models.DateField(auto_now_add=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.sender.user.username + "->" + self.recipient.user.username
@@ -155,7 +155,7 @@ class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user = models.OneToOneField(Account, on_delete=models.CASCADE)
     profile_image = models.ImageField(max_length=200, default = settings.USER_DEFAULT_PROFILE , null=True, upload_to=settings.PROFILE_UPLOAD_DIR)
-    set_at = models.DateField(auto_now_add=True)
+    set_at = models.DateField(auto_now=True)
 
 
     class Meta:

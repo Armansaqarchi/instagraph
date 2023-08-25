@@ -45,7 +45,7 @@ class FollowersAPIView(ModelViewSet):
     pagination_class = FollowerPaginator
     errors = {
         "forbidden" : "Access Denied",
-        "no_such_fr" : "No such friend request",
+        "no_such_fr" : "No such follow request",
         "already_follows" : "The user is already following you"
     }
     
@@ -145,14 +145,14 @@ class FollowersAPIView(ModelViewSet):
                          status = HTTP_200_OK)
 
 
-class FollowingAPIView(ModelViewSet):
+class FollowingsAPIView(ModelViewSet):
     """
     viewset for manipulating follow apis
     """
 
     errors = {
         "create_not_found" : "No such user or account",
-        "has req" : "has already pending request",
+        "has_req" : "has already pending request",
         "has_follow" : "already following"
     }
 
@@ -219,13 +219,15 @@ class FollowersListAPIView(ListAPIView):
         page_size = 30
 
 
-    serializer_class = [FollowerSerializer]
+    serializer_class = FollowerSerializer
+    pagination_class = FollowersListPaginator
     
     def get_queryset(self): # tested
         """
         returns list of followers for a user
         """
-        return self.request.user.account.followers
+        return self.request.user.account.followers_list
+
 
     def filter_queryset(self): # tested
         """
@@ -236,11 +238,11 @@ class FollowersListAPIView(ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset()
         page = self.paginate_queryset(queryset=queryset)
-        f_serializers = self.serializer_class(instance = page, Many=True)
+        f_serializers = self.serializer_class(instance = page, many=True)
         return Response({"Followers" : f_serializers.data, "Message" : "followers list returned as \"Followers\" ",
                           "Status" : "Success", "Code" : "followers_list"})
 
-class FollowingListAPIView(ListAPIView):
+class FollowingsListAPIView(ListAPIView):
 
     class FollowingListPaginator(PageNumberPagination):
         page_query_param = "page"
