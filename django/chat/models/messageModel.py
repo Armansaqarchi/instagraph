@@ -1,9 +1,15 @@
 from django.db import models
-from chat.models.chatModel import Chat, MESSAGE_TYPE
+from chat.models.chatModel import Chat
 from uuid import uuid4
 from posts.models import Post
 
 class BaseMessage(models.Model):
+
+    MESSAGE_TYPE = (
+        ("PRIVATE_CHAT", "private"),
+        ("GROUP_CHAT", "group")
+    )
+
     message_id = models.AutoField(null=False, editable=False, primary_key=True)
     message_type = models.CharField(choices=MESSAGE_TYPE, max_length=50)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
@@ -17,7 +23,6 @@ class BaseMessage(models.Model):
 class TextMessage(models.Model):
     message_id = models.OneToOneField(BaseMessage, on_delete=models.CASCADE)
     content = models.TextField(max_length=600)
-
 
     def __str__(self):
         return self.sender_id.username + " " + self.recipient_id.username

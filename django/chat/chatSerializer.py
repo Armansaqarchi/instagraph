@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from .models.chatModel import Group, Chat
+from .models.chatModel import GroupChat, Chat
 
 class GroupChatSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Group
+        model = GroupChat
 
 
 class ChatListSerializer(serializers.ModelSerializer):
