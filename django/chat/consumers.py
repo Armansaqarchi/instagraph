@@ -1,17 +1,21 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-import json
+from .exception_handler import ws_exception_handler
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+
+    def dispatch(self, message):
+        try:
+            return super().dispatch(message)
+        except Exception as exc:
+            context = self.scope
+            ws_exception_handler(exc=exc, context=context)
+
     async def connect(self):
-        # header = self.scope.get("headers")
-        # if not hasattr(header, "chat_room"):
-        #     await self.close()
-        # chat_room = header["chat_room"]
-        # self.channel_layer.
-        # if self.scope.get("user").is_authenticated:
-        #     await self.accept()
-        pass
+        chat = self.scope["chat"]
+        if self.scope.get("user").is_authenticated:
+            await self.accept()
+
 
 
     async def disconnect(self, close_code):

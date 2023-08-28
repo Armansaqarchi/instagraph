@@ -4,15 +4,18 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from ..models import Account
 from ..permissions import *
+import pyotp
+from time import time
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth import login, authenticate
+from base64 import b32encode
 from rest_framework.exceptions import ValidationError
-from ..models import Activation
 from rest_framework.parsers import JSONParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
+from django.conf import settings
+from ..email_sender import send_email
 from ..api.serializer import (
     UserSerializer,
     ProfileViewSerializer,
@@ -37,34 +40,51 @@ logger = logging.getLogger(__name__)
 
 
 
-class UserProfileView(APIView):
+# class UserProfileView(APIView):
 
-    model = Account
-    login_url = "accounts/login"
-    permission_classes = [IsAuthenticated]
+#     model = Account
+#     login_url = "accounts/login"
+#     permission_classes = [IsAuthenticated]
 
-    def has_object_permission(self, request, obj):
-        if request.method in SAFE_METHODS: # read access
-            return True, "SAFE"
-        try: 
-            if request.user == obj.user:
-                return True, "OWNER"
-        except FieldDoesNotExist:
-            return False, "BAD REQUEST"
-        return False, "PERMISSION DENIED"
+#     def has_object_permission(self, request, obj):
+#         if request.method in SAFE_METHODS: # read access
+#             return True, "SAFE"
+#         try: 
+#             if request.user == obj.user:
+#                 return True, "OWNER"
+#         except FieldDoesNotExist:
+#             return False, "BAD REQUEST"
+#         return False, "PERMISSION DENIED"
     
     
-    def get(self, request, pk) -> Response:
-        try:
-            account = Account.objects.get(id = pk)
-            self.has_object_permission(request, obj=account)    
-            serializer = ProfileViewSerializer(account)
-            #sending json response containing the Account info, use 'Account' to access it
-            return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
+#     def get(self, request, pk) -> Response:
+#         try:
+#             account = Account.objects.get(id = pk)
+#             self.has_object_permission(request, obj=account)    
+#             serializer = ProfileViewSerializer(account)
+#             #sending json response containing the Account info, use 'Account' to access it
+#             return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
 
-        except Account.DoesNotExist:
-            raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
+#         except Account.DoesNotExist:
+#             raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
 
+
+def generate_otp_key(user):
+    """
+    secret key generator based on user details
+    """
+
+    return f"{settings.SECRET_KEY}{user.email}{user.username}".encode()
+
+
+def send_otp(user):
+    """
+    makes an otp and then sends it to user's email
+    """
+    secret = b32encode(generate_otp_key(user=user))
+    otp = pyotp.TOTP(secret, interval=settings.ACTIVATION_TIMEOUT)
+    act_code = otp.now()
+    send_email(act_code, user)
 
 class LoginView(APIView):
     
@@ -78,15 +98,22 @@ class LoginView(APIView):
             user = authenticate(request=request)
         else:
             user = authenticate(username = username, password = password)
-        if user is not None:
+
+        if not user:
+            raise UnauthorizedException("Username or password may be incorrect", "incorrect_credentials")
+        
+        if user.is_active:
             login(request=request, user=user)
             message = "successfully logged in"
             referesh_token = user.account.token
             return Response({"Message" : message, "Status" : "success", "Code" : "login_successful",
                               "Token" : {"refresh" : str(referesh_token),
                              "access" : str(referesh_token.access_token)}}, HTTP_200_OK)
-        else: 
-            raise UnauthorizedException("Username or password may be incorrect", "incorrect_credentials")
+        else:
+            send_otp(user = user)
+
+            return Response({"Message" : f"Activation Code has been sent to {user.email}",\
+                          "Status" : "Success", "Code" : "activation_code"}, status=HTTP_200_OK)
 
 
 class ProfileView(ModelViewSet):
@@ -109,6 +136,11 @@ class ProfileView(ModelViewSet):
 
 
     def get_permissions(self):
+        """
+        permissions differ according to request http method.
+        some actions might require patch method which can be profile update or info update,
+        and that leads to different models
+        """
 
         PERMISSION_CASES = {
             "get" : IsFollowerPermission,
@@ -125,21 +157,36 @@ class ProfileView(ModelViewSet):
         try:
             user.is_valid(raise_exception=True)
             user = user.save()
-            token = user.account.token
+            if not settings.EMAIL_ACTIVATION:
+                return self.perform_activation(user=user)
+            
+            send_otp(user)
 
         except ValidationError as e:
             self.kwargs["Fields"] = {field : str(e.detail[field][0]) for field in e.detail}
             raise BadRequestException(self.errors["invalid"], "signup_fields_error")
-        
+                
         except EmailExistsException:
             raise AlreadyExistsException(self.errors["email_exists"], code="email_exists")
         
         except UsernameExistsException:
             raise AlreadyExistsException(self.errors["username_exists"], code="username_exists")
         
+        
+        return Response({"Message" : f"Activation Code has been sent to {user.email}",\
+                          "Status" : "Success", "Code" : "activation_code"}, status=HTTP_200_OK)
+
+    @staticmethod
+    def perform_activation(user, request):
+
+        user.is_active = True
+        login(request=request, user=user)
+        token = user.account.token
+        
         return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
                         "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
                             HTTP_201_CREATED)
+
 
     def update_profile_image(self, request, pk):
         account = self.get_object()
@@ -178,30 +225,39 @@ class ProfileView(ModelViewSet):
     
 
     
-    
-    
-    
-    
-class Activate(APIView):
+class ActivationCode(APIView):
+    """
+    an activation class works based on otp
+    each otp password remains 20 minutes valid.
+    this is because component time as an input to opt.verify() method is calculated like : duration_time // interval_time
+    which duration time is the time from reference time.
+    """
 
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
+    errors = {
+        "activation_invalid" : "activation code is invalid or maybe expired"
+    }
 
-    def post(self, request, code):
+    def get_user(self, pk):
+        try:
+            return Account.objects.get(pk = pk).user
+        except Account.DoesNotExist:
+            raise NotFoundException(f"No such user {pk}", code="user_not_found")
 
-        code = request.data["verification_code"]
-        email = request.data["email"]
-        act = Activation.objects.filter(code = code, email = email).first()
-        if act:
-            user = act.user
-            user.is_active = True
-            user.save()
 
-            act.delete()
-            authenticate(username = user.username, password = user.password)
-            login(request=request, user=user)
-            return Response({"Message" : "logged in successfully", "Status" : "success"}, status=HTTP_200_OK)
-        raise UnauthorizedException("something went wrong while verifying the code, try again", code = "unable_to_activate")
+    def post(self, request, pk):
+        user = self.get_user(pk=pk)
+
+        key = b32encode(generate_otp_key(user=user))
+        otp = pyotp.TOTP(key, interval=settings.ACTIVATION_TIMEOUT)
+        code = request.data.get("otp", "")
+
+        if not otp.verify(code, for_time= int(time())):
+            raise UnauthorizedException(self.errors["activation_invalid"], code="invalid_code")
+
+        return ProfileView.perform_activation(request=request, user=user)
+            
+
+
 
 
 
