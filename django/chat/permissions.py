@@ -1,10 +1,10 @@
 
 
-class IsMemberPermission():
+class IsChatMemberPermission:
 
     def check_object_permission(self, user, obj):
 
-        if not user.is_authenticated:
+        if not user.is_authenticated or not obj:
             return False
 
         if user.is_superuser:
@@ -20,6 +20,7 @@ class IsMemberPermission():
             group_chat = obj.groupchat
             if account in group_chat.accounts:
                 return True
+        print("two")
 
         return False
 

@@ -9,7 +9,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 
 
 def handle_exception(exc, context):
-
+    print("ddddddddddd", exc)
     if isinstance(exc, Http404):
         exc = exceptions.NotFound()
     elif isinstance(exc, AuthenticationFailed):

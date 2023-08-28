@@ -127,7 +127,7 @@ class UserSerializer(Serializer):
         fields = ["first_name", "username", "email", "password2", "date_of_birth", "bio"]
 
     def validate(self, attrs):
-        if  User.objects.filter(username = attrs['username']).exists():
+        if  User.objects.filter(username = attrs['username'], is_active = True).exists():
             raise UsernameExistsException()
         elif User.objects.filter(email = attrs['email']).exists():
             raise EmailExistsException()
@@ -140,9 +140,9 @@ class UserSerializer(Serializer):
             email = validated_data['email'],
             password = validated_data["password"],
             first_name = validated_data["first_name"],
-            last_name = validated_data["last_name"]
+            last_name = validated_data["last_name"],
+            is_active = False
         )
-        user.save()
         return user
     
     def update(self, instance, validated_data):

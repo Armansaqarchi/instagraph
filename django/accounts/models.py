@@ -140,16 +140,6 @@ class Story(models.Model):
         return self.user_id.user.username
     
 
-class Activation(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
-    email = models.EmailField(blank=True)
-    code = models.CharField(max_length=50, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "Activation"
-        ordering = ['created_at']
-
 
 class MediaProfile(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)

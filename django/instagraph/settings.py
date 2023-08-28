@@ -24,10 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-l6r1&_h=*io%8ejiomvu!fc@w6(g+5*imxts=g4*dp8m)7u8ag'
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["0.0.0.0", "49.13.60.63", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["0.0.0.0", "49.13.60.63", "127.0.0.1", "localhost", "37.32.6.196"]
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
@@ -94,6 +95,7 @@ INSTALLED_APPS = [
 ]
 
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -102,6 +104,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.CustomModelBackend"
 ]
 
 ROOT_URLCONF = 'instagraph.urls'
@@ -135,6 +142,9 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [("127.0.0.1", 6379)],
         },
+        "TEST_CONFIG": {
+            "hosts": [("localhost", 6379)],
+        }
     },
 }
 
@@ -149,24 +159,24 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'USER' : 'mahan',
-#         'PASSWORD' : 'test123123',
-#         "HOST" : "localhost",
-#         "PORT" : "5432",
-#         "NAME" : "postgres"
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3', # This is where you put the name of the db file. 
-                 # If one doesn't exist, it will be created at migration time.
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER' : 'mahan',
+        'PASSWORD' : 'test123123',
+        "HOST" : "localhost",
+        "PORT" : "5432",
+        "NAME" : "postgres"
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3', # This is where you put the name of the db file.
+#                  # If one doesn't exist, it will be created at migration time.
+#     }
+# }
 
 CACHES = {
     "default": {
@@ -230,19 +240,19 @@ REST_FRAMEWORK = {
 
 
 
-
-
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = ''
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-
+EMAIL_HOST_USER = 'arman.saqarchi@gmail.com'
+EMAIL_HOST_PASSWORD = 'rzuulavgpjksfttc'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
+
+ACTIVATION_TIMEOUT = 1200 # 2 min
+
+EMAIL_ACTIVATION = True
 
 LANGUAGE_CODE = 'en-us'
 
