@@ -18,11 +18,16 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from dotenv import dotenv_values
+
+env = dotenv_values("instagraph/configs.env")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l6r1&_h=*io%8ejiomvu!fc@w6(g+5*imxts=g4*dp8m)7u8ag'
+
+SECRET_KEY = env["SECRET_KEY"]
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -117,7 +122,7 @@ ROOT_URLCONF = 'instagraph.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR, "accounts"],
+        'DIRS': [os.path.join(BASE_DIR, "accounts", "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -245,13 +250,12 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'arman.saqarchi@gmail.com'
-EMAIL_HOST_PASSWORD = 'rzuulavgpjksfttc'
+EMAIL_HOST_PASSWORD = env["EMAIL_HOST_PASSWORD"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 ACTIVATION_TIMEOUT = 1200 # 2 min
-
 EMAIL_ACTIVATION = True
 
 LANGUAGE_CODE = 'en-us'

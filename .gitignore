@@ -1,0 +1,3 @@
+#sensitive configurations
+django/instagraph/configs.env
+django/static
