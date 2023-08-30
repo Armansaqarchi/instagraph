@@ -6,10 +6,12 @@ from rest_framework.views import set_rollback
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import InvalidToken
+import traceback
+import sys
 
 
 def handle_exception(exc, context):
-    print("ddddddddddd", exc)
+    print(exc)
     if isinstance(exc, Http404):
         exc = exceptions.NotFound()
     elif isinstance(exc, AuthenticationFailed):
@@ -66,3 +68,13 @@ class ForibiddenException(APIException):
     def __init__(self, message = "this page is forbidden", code="forbidden"):
         self.default_code = code
         super().__init__(message, "403 FORBIDDEN")
+
+
+class PasswordIsEqualException(APIException):
+
+    status_code = 409
+
+    def __init__(self, message = "password must differ from the previous one", code="forbidden"):
+        self.default_code = code
+        super().__init__(message, "409 CONFLICT")
+

@@ -191,24 +191,7 @@ class FollowingSerializer(Serializer):
         if hasattr(obj, "mediaprofile"):
             return getattr(obj.mediaprofile, "id", None)
         return None
-        
-class PasswordChangeSerializer(Serializer):
-    new_password = serializers.CharField()
-    confirm_new_password = serializers.CharField()
 
-    def validate(self, attrs):
-        if attrs.get("new_password") != attrs.get("confirm_new_password"):
-            raise ValidationError("password and confirm password should match")
-        
-        if not hasattr(self.context, id):
-            return ValidationError("no id specified")
-    
-    def change_password(self):
-        try:
-            account = Account.objects.get(self.context.get("id"))
-        except Account.DoesNotExist:
-            raise NotFoundException("No such user")
-        account.user.set_password(self.new_password)
 
 class FollowRequestSerializer(ModelSerializer):
 

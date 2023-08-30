@@ -5,7 +5,8 @@ from django.conf import settings
 from .views.AuthViews import (
     LoginView,
     ProfileView,
-    ActivationCode
+    ActivationCode,
+    PasswordResetAPIView
 )
 from .views.FollowViews import(
     FollowersAPIView,
@@ -18,6 +19,9 @@ from .views.FollowViews import(
 
 urlpatterns = [
     re_path(r"^login", LoginView.as_view(), name = "login"),
+    re_path(r"profile/forgot_password/", PasswordResetAPIView.as_view({"post" : "forgot_reset_pass"})),
+    re_path(r"profile/confirm_password/(?P<email>.*)", PasswordResetAPIView.as_view({"post" : "confirm_reset_pass_otp"})),
+    re_path(r"profile/reset_password/", PasswordResetAPIView.as_view({"post" : "reset_pass"})),
     re_path(r"^profile/(?P<pk>[0-9]+)", ProfileView.as_view({"get" : "retrieve", "patch" : "update", "delete" : "destroy"}), name = "profile"),
     re_path(r"profile/activation/(?P<pk>[0-9]+)", ActivationCode.as_view()),
     re_path(r"profile/image/(?P<pk>[0-9]+)", ProfileView.as_view({"patch" : "update_profile_image"})),
