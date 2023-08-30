@@ -15,6 +15,11 @@ class Post(models.Model):
         db_table = 'posts'
         ordering = ['created_at']
 
+
+    @property
+    def pages(self):
+        return self.medias.count()
+
 class Like(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -39,7 +44,7 @@ class Comment(models.Model):
 
 class MediaPost(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    post_id = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="medias")
     content_url = models.ImageField(max_length=200, upload_to=settings.DEFAULT_POST_DIR)
     posted_at = models.DateField(auto_now_add=True)
     page_num = models.IntegerField(null=False, default=1)

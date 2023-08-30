@@ -1,10 +1,12 @@
 import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.tokens import default_token_generator
 from ..models import Account
 from ..permissions import *
 import pyotp
+import re
+from django.contrib.auth.models import User
 from time import time
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -14,6 +16,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.viewsets import ViewSet
 from django.conf import settings
 from ..email_sender import send_email
 from ..api.serializer import (
@@ -39,52 +42,35 @@ from exceptions.exceptions import *
 logger = logging.getLogger(__name__)
 
 
+class OTPManager:
+    @staticmethod
+    def generate_otp_key(user):
+        """
+        secret key generator based on user details
+        """
 
-# class UserProfileView(APIView):
+        return f"{settings.SECRET_KEY}{user.email}{user.username}".encode()
 
-#     model = Account
-#     login_url = "accounts/login"
-#     permission_classes = [IsAuthenticated]
+    @staticmethod
+    def send_otp(user, subject= None, template = "email_verification.html"):
+        """
+        makes an otp and then sends it to user's email
+        """
+        secret = b32encode(OTPManager.generate_otp_key(user=user))
+        otp = pyotp.TOTP(secret, interval=settings.ACTIVATION_TIMEOUT)
+        act_code = otp.now()
+        send_email(act_code, user, subject = subject, template=template)
 
-#     def has_object_permission(self, request, obj):
-#         if request.method in SAFE_METHODS: # read access
-#             return True, "SAFE"
-#         try: 
-#             if request.user == obj.user:
-#                 return True, "OWNER"
-#         except FieldDoesNotExist:
-#             return False, "BAD REQUEST"
-#         return False, "PERMISSION DENIED"
-    
-    
-#     def get(self, request, pk) -> Response:
-#         try:
-#             account = Account.objects.get(id = pk)
-#             self.has_object_permission(request, obj=account)    
-#             serializer = ProfileViewSerializer(account)
-#             #sending json response containing the Account info, use 'Account' to access it
-#             return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
-
-#         except Account.DoesNotExist:
-#             raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
-
-
-def generate_otp_key(user):
-    """
-    secret key generator based on user details
-    """
-
-    return f"{settings.SECRET_KEY}{user.email}{user.username}".encode()
-
-
-def send_otp(user):
-    """
-    makes an otp and then sends it to user's email
-    """
-    secret = b32encode(generate_otp_key(user=user))
-    otp = pyotp.TOTP(secret, interval=settings.ACTIVATION_TIMEOUT)
-    act_code = otp.now()
-    send_email(act_code, user)
+    @staticmethod
+    def verify_otp(user, otp, exc_message = "invalid_otp"):
+        """
+        defined customized method to verify otp codes
+        """
+        key = b32encode(OTPManager.generate_otp_key(user=user))
+        real_otp = pyotp.TOTP(key, interval=settings.ACTIVATION_TIMEOUT)
+        print()
+        if not real_otp.verify(otp, for_time= int(time())):
+            raise UnauthorizedException(exc_message, code="invalid_code")
 
 class LoginView(APIView):
     
@@ -110,7 +96,7 @@ class LoginView(APIView):
                               "Token" : {"refresh" : str(referesh_token),
                              "access" : str(referesh_token.access_token)}}, HTTP_200_OK)
         else:
-            send_otp(user = user)
+            OTPManager.send_otp(user = user)
 
             return Response({"Message" : f"Activation Code has been sent to {user.email}",\
                           "Status" : "Success", "Code" : "activation_code"}, status=HTTP_200_OK)
@@ -118,10 +104,16 @@ class LoginView(APIView):
 
 class ProfileView(ModelViewSet):
 
+    PERMISSION_CASES = {
+        "get": IsFollowerPermission,
+        "patch": IsOwnerPermission,
+        "post": IsOwnerPermission
+    }
+
     errors = {
-        "invalid" : "Invalid format for the request body" ,
-        "email_exists" : "The Email has already been taken by another user",
-        "username_exists" : "The Username has already been taken by another user"
+        "invalid": "Invalid format for the request body",
+        "email_exists": "The Email has already been taken by another user",
+        "username_exists": "The Username has already been taken by another user"
     }
 
     class ProfilePaginator(PageNumberPagination):
@@ -142,13 +134,7 @@ class ProfileView(ModelViewSet):
         and that leads to different models
         """
 
-        PERMISSION_CASES = {
-            "get" : IsFollowerPermission,
-            "patch" : IsOwnerPermission,
-            "post" : IsOwnerPermission
-        }
-
-        return [PERMISSION_CASES[self.request.method.lower()]()]
+        return [self.PERMISSION_CASES[self.request.method.lower()]()]
 
 
     def create(self, request) -> Response:
@@ -160,7 +146,7 @@ class ProfileView(ModelViewSet):
             if not settings.EMAIL_ACTIVATION:
                 return self.perform_activation(user=user)
             
-            send_otp(user)
+            OTPManager.send_otp(user)
 
         except ValidationError as e:
             self.kwargs["Fields"] = {field : str(e.detail[field][0]) for field in e.detail}
@@ -224,13 +210,78 @@ class ProfileView(ModelViewSet):
         return response
     
 
+class PasswordResetAPIView(ViewSet):
+
+    regex = "^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$"
+
+    errors = {
+        "invalid_params": "invalid_query_params",
+        "password_low_security": "password must include at least 8 characters including numbers and one with capital"
+    }
+
+    def get_user(self, **kwargs):
+
+        user = User.objects.filter(**kwargs).first()
+        if not user:
+            raise NotFoundException(f"No such user found")
+
+        return user
+         
+
+    def forgot_reset_pass(self, request):
+        to_email = request.data["to_email"]
+        user = self.get_user(email = to_email)
+        OTPManager.send_otp(user=user, subject= "reset password verification code", template="reset_password_verification.html")
+        return Response({"Message" : f"6-digit verification code sent to {to_email}", "Status" : "success",
+                          "Code" : "verification_code_sent"}, status=HTTP_200_OK)
+
+
+    def confirm_reset_pass_otp(self, request, email):
+        otp = request.data["otp"]
+        user = self.get_user(email = email)
+        OTPManager.verify_otp(user=user, otp=otp)
+        token = default_token_generator.make_token(user= user)
+        return Response({"Message" : "otp confirmed", "Code" : "otp_confirmed", "Status" : "success",\
+                          "password_reset_token" : token, "user_pk" : user.pk})
+    
+
+    def reset_pass(self, request):
+        token = request.GET.get("token", None)
+        email_claim = request.GET.get("email", None)
+        print(email_claim, token)
+        if not token or not email_claim:
+            raise BadRequestException(self.errors["invalid_params"], code = "invalid_qeury_params")
+        
+        user = self.get_user(email = email_claim)
+        if default_token_generator.check_token(user = user, token = token):
+            return self._reset_password(user=user, new_password=request.data.get("password", None))
+        
+        raise UnauthorizedException("Token does not match the email or maybe expired", code="invalid_token")
+
+
+    def _reset_password(self, user, new_password):
+        if not new_password:
+            raise BadRequestException(self.errors["password_low_security"], code = "invalid_password_type")
+        if user.check_password(raw_password = new_password):
+            raise PasswordIsEqualException()
+
+        user.set_password(new_password)
+        user.save()
+        return Response({"Message" : "Your password has been reset successfully", "Code" : "password_reset", "Status" : "Success"},
+                        status=HTTP_200_OK)
+
+        
+    def _verify_password(self, raw_password):
+        return re.match(self.regex, raw_password)
+
+
     
 class ActivationCode(APIView):
     """
     an activation class works based on otp
-    each otp password remains 20 minutes valid.
+    each otp password remains 2 minutes valid.
     this is because component time as an input to opt.verify() method is calculated like : duration_time // interval_time
-    which duration time is the time from reference time.
+    which duration time calculated since reference time.
     """
 
     errors = {
@@ -246,18 +297,40 @@ class ActivationCode(APIView):
 
     def post(self, request, pk):
         user = self.get_user(pk=pk)
-
-        key = b32encode(generate_otp_key(user=user))
-        otp = pyotp.TOTP(key, interval=settings.ACTIVATION_TIMEOUT)
-        code = request.data.get("otp", "")
-
-        if not otp.verify(code, for_time= int(time())):
-            raise UnauthorizedException(self.errors["activation_invalid"], code="invalid_code")
-
+        OTPManager.verify_otp(user=user, otp=request.data["otp"], exc_message=self.errors["activation_invalid"])
         return ProfileView.perform_activation(request=request, user=user)
-            
 
 
+
+
+
+# class UserProfileView(APIView):
+
+#     model = Account
+#     login_url = "accounts/login"
+#     permission_classes = [IsAuthenticated]
+
+#     def has_object_permission(self, request, obj):
+#         if request.method in SAFE_METHODS: # read access
+#             return True, "SAFE"
+#         try:
+#             if request.user == obj.user:
+#                 return True, "OWNER"
+#         except FieldDoesNotExist:
+#             return False, "BAD REQUEST"
+#         return False, "PERMISSION DENIED"
+
+
+#     def get(self, request, pk) -> Response:
+#         try:
+#             account = Account.objects.get(id = pk)
+#             self.has_object_permission(request, obj=account)
+#             serializer = ProfileViewSerializer(account)
+#             #sending json response containing the Account info, use 'Account' to access it
+#             return Response({"Account" : serializer.data, "Message" : "user details sent", "Status" : "success"}, status=HTTP_200_OK)
+
+#         except Account.DoesNotExist:
+#             raise NotFoundException("Account id %s does not exist" % pk, code="profile_not_found")
 
 
 

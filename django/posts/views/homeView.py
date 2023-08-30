@@ -82,6 +82,8 @@ class HomeView(ListAPIView):
         account.save() 
 
         return Response({"data" : serialized, "status" : "success", "last_seen" : last_seen_post}, status=HTTP_200_OK)
+    
+
 
 
         
