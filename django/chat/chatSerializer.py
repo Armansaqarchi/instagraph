@@ -1,17 +1,30 @@
 from rest_framework import serializers
-from .models.chatModel import GroupChat, Chat
+from .models.messageModel import BaseMessage, TextMessage
+from collections import OrderedDict
 
-class GroupChatSerializer(serializers.ModelSerializer):
+class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = GroupChat
+        model = TextMessage
+        fields = "__all__"
 
+    def to_representation(self, instance):
+        """
+        typically, a message must have content, user_id, username and the time message received
+        """
+        
+        ret = OrderedDict()
+        ret["content"] = instance.content
+        ret["date"] = str(instance.base_message.sent_at)
+        ret["user_id"] = instance.base_message.sender.id
+        ret["username"] = instance.base_message.sender.user.username
 
-class ChatListSerializer(serializers.ModelSerializer):
-    """
-    internal model attributes
-    """
-    group = GroupChatSerializer(required = True)
+        return ret
     
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    messages = serializers.ListField(child = MessageSerializer(), required = True, allow_empty = True)
+
+
 
         

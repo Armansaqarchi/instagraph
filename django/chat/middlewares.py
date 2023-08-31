@@ -24,7 +24,7 @@ class BaseMiddleware:
         return [permission() for permission in self.permission_class]
 
 
-    def check_object_permission(self, scope):
+    async def check_object_permission(self, scope):
         """
         just like wsgi applications, check user authorizations
         :param:
@@ -35,7 +35,7 @@ class BaseMiddleware:
         """
         for permission in self.get_permission_classes():
             asynced_func =  sync_to_async(permission.check_object_permission)
-            if not asynced_func(scope.get("user", None), scope.get("chat", None)):
+            if not await asynced_func(scope.get("user", None), scope.get("chat", None)):
                 return False
 
     def set_query_params(self, scope):
@@ -91,8 +91,6 @@ class TokenBaseMiddleware(BaseMiddleware):
 
         scope["user"] = user
 
-        await self.set_chat(scope)
-
         return await self.app(scope, receive, send)
 
 
@@ -101,8 +99,7 @@ class ChatRoomMiddleware(BaseMiddleware):
 
     permission_class = [IsChatMemberPermission]
 
-    async def set_chat(self, thread):
-
+    async def set_chat(self, thread, scope):
 
         if not thread:
             return
@@ -112,7 +109,7 @@ class ChatRoomMiddleware(BaseMiddleware):
         except Chat.DoesNotExist:
             return
 
-        self.check_object_permission(scope = scope)
+        await self.check_object_permission(scope = scope)
 
 
     async def __call__(self, scope, receive, send):
@@ -120,17 +117,18 @@ class ChatRoomMiddleware(BaseMiddleware):
         looks for thread id and gets the chat
         this class is also responsible to check permissions required to access the chat
         """
-        
+
+    
         thread = scope["query_params"].get("thread", None)
-        self.set_chat(thread=thread)
+        await self.set_chat(thread=thread, scope = scope)
 
 
-        self.check_object_permission(scope=scope)
+        return await self.app(scope, receive, send)
+    
 
-        return await self.app(scope, send, receive)
 
 
 
 
 def tokenBaseMiddlewareStack(inner):
-    return ChatRoomMiddleware(TokenBaseMiddleware(inner))
+    return TokenBaseMiddleware(ChatRoomMiddleware(inner))
