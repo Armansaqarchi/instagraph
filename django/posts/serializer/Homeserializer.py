@@ -4,14 +4,14 @@ from accounts.models import Story
 from django.contrib.auth.models import User
 from exceptions.exceptions import *
 from django.db import transaction
-from models import MediaPost
+from ..models import MediaPost
 
 
-class PostMediaSerializer(serializers.Serializer):
-    medias = serializers.listField(child = serializers.ImageField, allow_empty = True)
+class PostSerializer(serializers.Serializer):
+    medias = serializers.ListField(child = serializers.ImageField(), allow_empty = True)
     description = serializers.CharField()
     location = serializers.CharField()
-    user = serializers.PositiveIntegerField(required = True)
+    user = serializers.IntegerField(required = True, min_value=0)
 
     def validate_user(self, user):
         if not User.objects.filter(pk = user).exists():
@@ -32,12 +32,13 @@ class PostMediaSerializer(serializers.Serializer):
         
         page = 0
         for media in medias:
+            page+=1
             MediaPost.objects.create(
                 post_id = post.id,
                 content_url = media,
                 page_num = page
             )
-            page+=1
+            
 
 
 

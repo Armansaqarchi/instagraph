@@ -12,7 +12,7 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from chat.middlewares import tokenBaseMiddlewareStack
-import asyncio
+from channels.auth import AuthMiddlewareStack
 import chat.routing
 
 
