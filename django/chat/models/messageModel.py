@@ -1,5 +1,4 @@
 from django.db import models
-from chat.models.chatModel import Chat
 from accounts.models import Account
 from posts.models import Post
 
@@ -7,7 +6,7 @@ class BaseMessage(models.Model):
 
     sender = models.ForeignKey(Account, editable=False, on_delete=models.DO_NOTHING)
     message_id = models.AutoField(null=False, editable=False, primary_key=True)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")
+    chat = models.ForeignKey("chat.Chat", on_delete=models.CASCADE, related_name="messages")
     is_read = models.BooleanField(default=False)
     sent_at = models.DateTimeField(auto_now_add=True)
     class Meta:

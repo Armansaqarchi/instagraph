@@ -1,14 +1,10 @@
-from typing import Iterable, Optional
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from uuid import uuid4
-from rest_framework.exceptions import ValidationError
 from django.conf import settings
-from PIL import Image
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
+from chat.models.chatModel import Chat
 
 
 class Account(models.Model):
@@ -59,7 +55,14 @@ class Account(models.Model):
         followings_id = self.follower_set.values_list("following", flat = True)
         return Account.objects.filter(Q(id__in = followings_id)).count()
     
+    @property
+    def chats(self):
+        ids = self.member1.values_list("thread", flat = True).union(self.member2.values_list("thread", flat = True))\
+            .union(self.groups.values_list("thread", flat = True))
         
+
+        return Chat.objects.filter(thread__in = ids)
+
     
 
     def update(self, **kwargs):
