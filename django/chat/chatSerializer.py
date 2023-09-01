@@ -22,9 +22,12 @@ class MessageSerializer(serializers.ModelSerializer):
         return ret
     
 
-class ChatMessageSerializer(serializers.ModelSerializer):
-    messages = serializers.ListField(child = MessageSerializer(), required = True, allow_empty = True)
+class ChatMessageSerializer(serializers.Serializer):
 
 
+    def to_representation(self, instance):
+    
+        serialized_messages = [MessageSerializer(instance = message.textmessage).data for message in instance]
 
+        return {"message" : serialized_messages}
         

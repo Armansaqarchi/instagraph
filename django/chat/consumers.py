@@ -15,7 +15,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return super().dispatch(message)
         except Exception as exc:
             context = self.scope
-            print(exc)
             ws_exception_handler(exc=exc, context=context)
 
 
