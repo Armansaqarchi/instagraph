@@ -136,34 +136,39 @@ class CommentAPIView(ModelViewSet):
         return self.PERMISSION_CASES[self.requset.method.lower()] 
     
 
-    def get_post(self, pk):
+    def get_model(self, pk, model):
         try:
-            return Post.objects.get(pk = pk)
-        except Post.DoesNotExist:
+            instance = model.objects.get(pk = pk)
+        except model.DoesNotExist:
             raise NotFoundException("No such post", code = "post_id_invalid")
-        
+        self.check_object_permissions(request = self.request, obj = instance)
+        return instance
+ 
 
     def create(self, request, pk, *args, **kwargs):
         comment = request.data["content"]
-        post = self.get_post(pk=pk)
+        post = self.get_model(pk=pk, model = Post)
         Comment.objects.create(
             user = request.user.account,
             content = comment,
             post = post
         )
-        return Response({"Message" : "comment successfully created", "Status" : "Success", "Code" : "post_comment"}, status=HTTP_200_OK)
+        return Response({"Message" : "comment successfully created", "Status" : "Success", "Code" : "post_comment"},
+                         status=HTTP_200_OK)
         
     
     def list(self, request, pk, *args, **kwargs):
         post = self.get_post(pk=pk)
         comments = post.post_comments
         serialized_comments = self.serializer_class(instance= comments, many = True)
-        return Response({"Messages" : f"post {post.id} comments are provided", "Status" : "Success", "Code" : "comments_list"},
+        return Response({"data" : serialized_comments.data, "Messages" : f"post {post.id} comments are provided", "Status" : "Success", "Code" : "comments_list"},
                          status=HTTP_200_OK)
     
     
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+    def destroy(self, request, pk, *args, **kwargs):
+        comment = self.get_model(pk = pk, model = Comment)
+        comment.delete()
+        return Response({"Message" : "comment successfully deleted", "Code" : "comment_deleted", "Status" : "Success"}, status=HTTP_204_NO_CONTENT)
     
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
