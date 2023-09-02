@@ -1,10 +1,8 @@
 from django.test import TestCase
 from channels.testing import WebsocketCommunicator, ChannelsLiveServerTestCase
-from .consumers import ChatConsumer
 from django.contrib.auth.models import User
 from instagraph.asgi import application
 from .models.chatModel import PrivateChat, GroupChat
-from accounts.models import Account
 from asgiref.sync import sync_to_async
 
 class TestChat(ChannelsLiveServerTestCase):
@@ -112,7 +110,7 @@ class TestUtilities(TestCase):
     def test_account_chats(self):
         chat_list = self.user1.account.chats
         self.assertEqual(len(chat_list), 2)
-        print(chat_list)
+
         
 
 

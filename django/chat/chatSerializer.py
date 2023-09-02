@@ -18,16 +18,12 @@ class MessageSerializer(serializers.ModelSerializer):
         ret["date"] = str(instance.base_message.sent_at)
         ret["user_id"] = instance.base_message.sender.id
         ret["username"] = instance.base_message.sender.user.username
-
         return ret
     
 
 class ChatMessageSerializer(serializers.Serializer):
 
-
     def to_representation(self, instance):
-    
         serialized_messages = [MessageSerializer(instance = message.textmessage).data for message in instance]
-
         return {"message" : serialized_messages}
         
