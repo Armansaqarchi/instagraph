@@ -48,6 +48,11 @@ class StorySerializer(serializers.ModelSerializer):
 
 
 class LikesSerializer(serializers.Serializer):
+    """
+    just a class for representing likes.
+    any Like object has so much difference than its representation
+    thus, the only application of this class is to represent the like object
+    """
 
     def to_representation(self, like):
         account = like.user
@@ -70,4 +75,23 @@ class LikesSerializer(serializers.Serializer):
         """
         account = self.context["account"]
         return account.followings_list.filter(id = account.id).exists()
+    
+
+class CommentSerializer(serializers.Serializer):
+    """
+    just like the Like object,
+    the only use of this class is to represent the comment.
+    any comment has its username, user_id, content for comment
+    """
+
+    def to_representation(self, comment):
+        ret = OrderedDict()
+        ret["user_id"] = comment.user.id
+        ret["username"] = comment.user.username
+        ret["firstname"] = comment.user.first_name
+        ret["lastname"] = comment.user.last_name
+        ret["is_private"] = comment.user.account.is_private
+        ret["date"] = comment.commented_at
+        ret["content"] = comment.content
+        
     
