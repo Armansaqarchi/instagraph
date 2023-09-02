@@ -85,13 +85,21 @@ class CommentSerializer(serializers.Serializer):
     """
 
     def to_representation(self, comment):
+        """
+        to_representation the comment
+        comment.user refers to the account associated with this comment
+        and comment.user.user referes to the user associated to the comment,
+        as you can access any user with having its associated user
+        """
         ret = OrderedDict()
-        ret["user_id"] = comment.user.id
-        ret["username"] = comment.user.username
-        ret["firstname"] = comment.user.first_name
-        ret["lastname"] = comment.user.last_name
-        ret["is_private"] = comment.user.account.is_private
+        ret["user_id"] = comment.user.user.id
+        ret["username"] = comment.user.user.username
+        ret["firstname"] = comment.user.user.first_name
+        ret["lastname"] = comment.user.user.last_name
+        ret["is_private"] = comment.user.is_private
         ret["date"] = comment.commented_at
         ret["content"] = comment.content
+
+        return ret
         
     

@@ -34,12 +34,12 @@ class TestSerializers(APITestCase):
             post = self.post2
         )
         self.comment1 = Comment.objects.create(
-            user = self.user1,
+            user = self.user1.account,
             post = self.post1,
             content = "test"
         )
         self.comment2 = Comment.objects.create(
-            user = self.user2,
+            user = self.user2.account,
             post = self.post1,
             content = "test2"
         )
@@ -51,6 +51,5 @@ class TestSerializers(APITestCase):
 
     
     def test_comment_serializer(self):
-        comments = CommentSerializer(comment = [self.comment1, self.comment2], many = True)
-        print(comments)
+        comments = CommentSerializer(instance = [self.comment1, self.comment2], many = True)
         self.assertEqual(len(comments.data), 2)
