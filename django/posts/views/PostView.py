@@ -2,11 +2,13 @@ from rest_framework.viewsets import ModelViewSet
 from ..permissions import isFollowerOrPublicPermission
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT
 from accounts.permissions import IsOwnerPermission
 from accounts.models import Account
 from posts.models import Post
+from exceptions.exceptions import *
 from ..models import Like, Comment
+from ..serializer.Homeserializer import LikesSerializer, CommentSerializer
 
 class PostViewAPI(ModelViewSet):
     """
@@ -76,10 +78,23 @@ class LikeAPIView(ModelViewSet):
     user sees post likes using get :: list
     """
 
-    permission_classes = isFollowerOrPublicPermission
     pagination_class = "# must complete"
     queryset = Post.objects.all()
 
+
+    PERMISSION_CASES = {
+        "get" : isFollowerOrPublicPermission,
+        "delete" : IsOwnerPermission
+    }
+
+    def get_like(self, pk):
+        try:
+            return Like.objects.get(pk = pk)
+        except Like.DoesNotExist:
+            raise NotFoundException("No such Like object", code = "object_not_found")
+
+    def get_permissions(self):
+        return self.PERMISSION_CASES[self.request.method.lower()]
 
     def retrieve(self, request, pk, *args, **kwargs):
         post = self.get_object()
@@ -87,15 +102,17 @@ class LikeAPIView(ModelViewSet):
             user = self.request.user.account,
             post = post
         )
-
-        return Response({"Message" : "post liked", "Status" : "Success", "Code" : "liked"}, status= HTTP_200_OK)
+        return Response({"data" : like, "Message" : "post liked", "Status" : "Success", "Code" : "liked"}, status= HTTP_200_OK)
         
-
 
     def list(self, request, pk, *args, **kwargs):
         post = self.get_object()
+        likes = LikesSerializer(instance= post.likes, many = True, context = {"account" : self.request.user.account})
+        return Response({"data" : likes.data, "Message" : f"likes for post {post.id}", "Status" : "Success", "Code" : "post_likes"}, status=HTTP_200_OK)
         
     
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+    def destroy(self, request, pk, *args, **kwargs):
+        like = self.get_like(pk = pk)
+        like.delete()
+        return Response({"Message" : "like object deleted", "Status" : "Success", "Code" : "like_deleted"}, status=HTTP_204_NO_CONTENT)
 
