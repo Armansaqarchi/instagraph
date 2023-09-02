@@ -22,13 +22,14 @@ class Post(models.Model):
 
 class Like(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
-    user_id = models.ForeignKey(Account, on_delete=models.CASCADE)
-    post_id = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='posts')
-    like_at = models.DateField(auto_now_add=True)
+    user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='posts')
+    liked_at = models.DateField(auto_now_add=True)
 
     class Meta:
+        unique_together = ["user", "post"]
         db_table = 'likes'
-        ordering = ['like_at']
+        ordering = ['liked_at']
 
 
 class Comment(models.Model):

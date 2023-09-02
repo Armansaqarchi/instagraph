@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from ..models import Post
+from collections import OrderedDict
 from accounts.models import Story
 from django.contrib.auth.models import User
 from exceptions.exceptions import *
 from django.db import transaction
+from rest_framework.serializers import ListSerializer
 from ..models import MediaPost
 
 
@@ -39,14 +41,33 @@ class PostSerializer(serializers.Serializer):
                 page_num = page
             )
             
-
-
-
-
-
-
-
 class StorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Story
         fields = "__all__"
+
+
+class LikesSerializer(serializers.Serializer):
+
+    def to_representation(self, like):
+        account = like.user
+        ret = OrderedDict()
+        ret["user_id"] = account.id
+        ret["username"] = account.user.username
+        ret["firstname"] = account.user.first_name
+        ret["lastname"] = account.user.last_name
+        ret["is_private"] = account.is_private
+        ret["has_user_followed"] = self.get_has_user_followed(account=account)
+        ret["date"] = like.liked_at
+
+
+        return ret
+    
+    def get_has_user_followed(self, account):
+        """
+        checks whether the viewer is already following the account
+        when initializing this class, viewer's account must be set in the context
+        """
+        account = self.context["account"]
+        return account.followings_list.filter(id = account.id).exists()
+    

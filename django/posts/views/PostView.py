@@ -6,9 +6,15 @@ from rest_framework.status import HTTP_200_OK
 from accounts.permissions import IsOwnerPermission
 from accounts.models import Account
 from posts.models import Post
-from posts.serializer.Homeserializer import PostSerializer
+from ..models import Like, Comment
 
 class PostViewAPI(ModelViewSet):
+    """
+    Post API View
+    user can create post using post:create
+    user can partial_update using patch :: partial update
+    user can destroy the post using delete :: destroy
+    """
 
     class PostPagination(PageNumberPagination):
         page_query_param = "page"
@@ -62,4 +68,34 @@ class PostViewAPI(ModelViewSet):
         return response
 
 
+class LikeAPIView(ModelViewSet):
+    """
+    Like API view:
+    user likes posts using get :: retreive method
+    user dislikes (removes) the like using delete :: destroy
+    user sees post likes using get :: list
+    """
+
+    permission_classes = isFollowerOrPublicPermission
+    pagination_class = "# must complete"
+    queryset = Post.objects.all()
+
+
+    def retrieve(self, request, pk, *args, **kwargs):
+        post = self.get_object()
+        like = Like.objects.create(
+            user = self.request.user.account,
+            post = post
+        )
+
+        return Response({"Message" : "post liked", "Status" : "Success", "Code" : "liked"}, status= HTTP_200_OK)
         
+
+
+    def list(self, request, pk, *args, **kwargs):
+        post = self.get_object()
+        
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+

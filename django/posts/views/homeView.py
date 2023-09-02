@@ -1,18 +1,11 @@
-from typing import Any
-from django import http
 from accounts.models import Story 
-from django.http.response import HttpResponse
-from rest_framework.views import APIView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.views.FollowViews import IsOwnerPermission
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from ..models import Post
 from django.db.models.query import QuerySet
 from rest_framework.response import Response
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.conf import settings
-from django.views.decorators.cache import cache_page
 from ..serializer.Homeserializer import PostSerializer, StorySerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
