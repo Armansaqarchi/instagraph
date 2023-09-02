@@ -1,11 +1,10 @@
 from rest_framework.test import APITestCase
-from ..models import Post
+from ..models import Post, Like, Comment
 from django.contrib.auth.models import User
-from ..models import Like
-from ..serializer.Homeserializer import LikesSerializer
+from ..serializer.Homeserializer import LikesSerializer, CommentSerializer
 
 
-class TestLikeSerializer(APITestCase):
+class TestSerializers(APITestCase):
 
     def setUp(self) -> None:
         self.user1 = User.objects.create(
@@ -34,8 +33,23 @@ class TestLikeSerializer(APITestCase):
             user = self.user2.account,
             post = self.post2
         )
+        self.comment1 = Comment.objects.create(
+            user = self.user1.account,
+            post = self.post1,
+            content = "test"
+        )
+        self.comment2 = Comment.objects.create(
+            user = self.user2.account,
+            post = self.post1,
+            content = "test2"
+        )
 
     
     def test_like_serializer(self):
-        like = LikesSerializer(instance= [self.like1, self.like2], many = True, context = {"account" : self.user1.account})
-        self.assertEqual(len(like.data), 2)
+        likes = LikesSerializer(instance= [self.like1, self.like2], many = True, context = {"account" : self.user1.account})
+        self.assertEqual(len(likes.data), 2)
+
+    
+    def test_comment_serializer(self):
+        comments = CommentSerializer(instance = [self.comment1, self.comment2], many = True)
+        self.assertEqual(len(comments.data), 2)
