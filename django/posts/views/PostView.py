@@ -136,18 +136,29 @@ class CommentAPIView(ModelViewSet):
         return self.PERMISSION_CASES[self.requset.method.lower()] 
     
 
-    def get_model(self, pk, model):
+    def get_object(self, pk, model, check_object = None):
+        """
+        kind of overridden method for get_object that is more customized
+        by default, check_object_permission is performed on the same target object.
+        but sometimes needed to be checked for at attribute associated with that object
+        
+        @param:
+            model : the model to make db query for
+            check_object : the attribute associated with that object that might be consider as the permission check target
+        """
         try:
             instance = model.objects.get(pk = pk)
         except model.DoesNotExist:
             raise NotFoundException("No such post", code = "post_id_invalid")
-        self.check_object_permissions(request = self.request, obj = instance)
+        
+        check_object = instance or getattr(instance, check_object, None)
+        self.check_object_permissions(request = self.request, obj = check_object)
         return instance
  
 
     def create(self, request, pk, *args, **kwargs):
         comment = request.data["content"]
-        post = self.get_model(pk=pk, model = Post)
+        post = self.get_object(pk=pk, model = Post)
         Comment.objects.create(
             user = request.user.account,
             content = comment,
@@ -158,7 +169,7 @@ class CommentAPIView(ModelViewSet):
         
     
     def list(self, request, pk, *args, **kwargs):
-        post = self.get_post(pk=pk)
+        post = self.get_object(pk=pk, model = Post)
         comments = post.post_comments
         serialized_comments = self.serializer_class(instance= comments, many = True)
         return Response({"data" : serialized_comments.data, "Messages" : f"post {post.id} comments are provided", "Status" : "Success", "Code" : "comments_list"},
@@ -166,10 +177,14 @@ class CommentAPIView(ModelViewSet):
     
     
     def destroy(self, request, pk, *args, **kwargs):
-        comment = self.get_model(pk = pk, model = Comment)
+        comment = self.get_object(pk = pk, model = Comment)
         comment.delete()
         return Response({"Message" : "comment successfully deleted", "Code" : "comment_deleted", "Status" : "Success"}, status=HTTP_204_NO_CONTENT)
     
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    def retrieve(self, request, pk, *args, **kwargs):
+        comment = self.get_object(pk = pk, model = Comment, check_object="post")
+        comment_data = self.serializer_class(instance = comment).data
+        return Response({"data" : comment_data, "Message" : "here is the comment",
+                          "Status" : "Success", "Code" : "comment_provided"}, status=HTTP_200_OK)
+    
     
