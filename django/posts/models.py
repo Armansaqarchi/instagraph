@@ -35,7 +35,7 @@ class Like(models.Model):
 class Comment(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
-    post = models.ForeignKey(to = Post, on_delete=models.CASCADE, related_name="comment_post")
+    post = models.ForeignKey(to = Post, on_delete=models.CASCADE, related_name="post_comments")
     content = models.CharField(max_length=300)
     likes_count = models.PositiveBigIntegerField(default = 0)
     commented_at = models.DateField(auto_now_add=True)    

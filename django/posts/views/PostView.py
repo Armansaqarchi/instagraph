@@ -96,13 +96,18 @@ class LikeAPIView(ModelViewSet):
     def get_permissions(self):
         return self.PERMISSION_CASES[self.request.method.lower()]
 
-    def retrieve(self, request, pk, *args, **kwargs):
+    def create(self, request, pk, *args, **kwargs):
         post = self.get_object()
         like = Like.objects.create(
             user = self.request.user.account,
             post = post
         )
         return Response({"data" : like, "Message" : "post liked", "Status" : "Success", "Code" : "liked"}, status= HTTP_200_OK)
+    
+
+    def retrieve(self, request, *args, **kwargs):
+        # to do
+        return super().retrieve(request, *args, **kwargs)
         
 
     def list(self, request, pk, *args, **kwargs):
@@ -116,3 +121,50 @@ class LikeAPIView(ModelViewSet):
         like.delete()
         return Response({"Message" : "like object deleted", "Status" : "Success", "Code" : "like_deleted"}, status=HTTP_204_NO_CONTENT)
 
+
+class CommentAPIView(ModelViewSet):
+
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    PERMISSION_CASES = {
+        "delete" : IsOwnerPermission,
+        "get" : isFollowerOrPublicPermission
+    }
+
+    def get_permissions(self):
+        return self.PERMISSION_CASES[self.requset.method.lower()] 
+    
+
+    def get_post(self, pk):
+        try:
+            return Post.objects.get(pk = pk)
+        except Post.DoesNotExist:
+            raise NotFoundException("No such post", code = "post_id_invalid")
+        
+
+    def create(self, request, pk, *args, **kwargs):
+        comment = request.data["content"]
+        post = self.get_post(pk=pk)
+        Comment.objects.create(
+            user = request.user.account,
+            content = comment,
+            post = post
+        )
+        return Response({"Message" : "comment successfully created", "Status" : "Success", "Code" : "post_comment"}, status=HTTP_200_OK)
+        
+    
+    def list(self, request, pk, *args, **kwargs):
+        post = self.get_post(pk=pk)
+        comments = post.post_comments
+        serialized_comments = self.serializer_class(instance= comments, many = True)
+        return Response({"Messages" : f"post {post.id} comments are provided", "Status" : "Success", "Code" : "comments_list"},
+                         status=HTTP_200_OK)
+    
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+    
