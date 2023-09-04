@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.contrib.auth import login, authenticate
 from base64 import b32encode
+from posts.permissions import IsFollowerOrPublicPermission
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.viewsets import ModelViewSet
@@ -68,7 +69,6 @@ class OTPManager:
         """
         key = b32encode(OTPManager.generate_otp_key(user=user))
         real_otp = pyotp.TOTP(key, interval=settings.ACTIVATION_TIMEOUT)
-        print()
         if not real_otp.verify(otp, for_time= int(time())):
             raise UnauthorizedException(exc_message, code="invalid_code")
 
@@ -105,7 +105,7 @@ class LoginView(APIView):
 class ProfileView(ModelViewSet):
 
     PERMISSION_CASES = {
-        "get": IsFollowerPermission,
+        "get": IsFollowerOrPublicPermission,
         "patch": IsOwnerPermission,
         "post": IsOwnerPermission
     }

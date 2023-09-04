@@ -1,17 +1,16 @@
 from rest_framework.exceptions import APIException
 from django.http import Http404
 from rest_framework import exceptions
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import set_rollback
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.exceptions import InvalidToken
-import traceback
-import sys
+
 
 
 def handle_exception(exc, context):
-    print(exc)
+
+
     if isinstance(exc, Http404):
         exc = exceptions.NotFound()
     elif isinstance(exc, AuthenticationFailed):
@@ -19,6 +18,7 @@ def handle_exception(exc, context):
     elif isinstance(exc, InvalidToken):
         exc.detail = "Token is invalid or maybe expired"
 
+    print(type(exc))
 
     detail = getattr(exc, "detail", None)
     code = getattr(exc, "default_code", None)

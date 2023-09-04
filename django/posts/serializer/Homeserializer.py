@@ -5,7 +5,7 @@ from accounts.models import Story
 from django.contrib.auth.models import User
 from exceptions.exceptions import *
 from django.db import transaction
-from rest_framework.serializers import ListSerializer
+from ..models import Like
 from ..models import MediaPost
 
 
@@ -54,6 +54,20 @@ class LikesSerializer(serializers.Serializer):
     thus, the only application of this class is to represent the like object
     """
 
+    user = serializers.IntegerField()
+    post = serializers.UUIDField()
+
+    def create(self, validated_data):
+
+        like, created = Like.objects.get_or_create(
+            user_id = validated_data["user"],
+            post_id = str(validated_data["post"])
+        )
+        if not created:
+            raise AlreadyExistsException("you have already liked this post", code = "post_already_liked")
+        return like
+         
+
     def to_representation(self, like):
         account = like.user
         ret = OrderedDict()
@@ -65,7 +79,7 @@ class LikesSerializer(serializers.Serializer):
         ret["has_user_followed"] = self.get_has_user_followed(account=account)
         ret["date"] = like.liked_at
 
-
+        
         return ret
     
     def get_has_user_followed(self, account):
@@ -82,7 +96,17 @@ class CommentSerializer(serializers.Serializer):
     just like the Like object,
     the only use of this class is to represent the comment.
     any comment has its username, user_id, content for comment
+    but when it comes to update or any kind of edit,
+    there is only one attribute that is editable which is content
     """
+
+    content = serializers.CharField(source = "content")
+
+    def update(self, instance, validated_data):
+        instance.content = validated_data.get("content", instance.content)
+        instance.save()
+        return instance 
+
 
     def to_representation(self, comment):
         """

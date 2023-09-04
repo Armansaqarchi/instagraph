@@ -23,15 +23,11 @@ from ..models import Account
 from rest_framework.response import Response
 import logging
 from ..api.serializer import FollowingSerializer, FollowRequestSerializer
-from django.shortcuts import get_object_or_404
 from rest_framework.status import(
     HTTP_400_BAD_REQUEST,
     HTTP_200_OK,
     HTTP_204_NO_CONTENT
 )
-import traceback
-from django.conf import settings
-from rest_framework.request import Request
 from exceptions.exceptions import *
 
 logger = logging.getLogger(__name__)
