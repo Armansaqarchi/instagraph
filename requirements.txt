@@ -11,3 +11,4 @@ python-dotenv==1.0.0
 pyotp==2.9.0
 asgiref==3.7.2
 channels==4.0.0
+psycopg2==2.9.7
