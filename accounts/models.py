@@ -4,7 +4,15 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
+from .email_sender import send_email
 from chat.models.chatModel import Chat
+from datetime import datetime
+import logging
+
+
+#get a logger indicating this file 
+logger = logging.getLogger(__name__)
+
 
 
 class Account(models.Model):
@@ -25,6 +33,18 @@ class Account(models.Model):
     following = models.PositiveBigIntegerField(default = 0)
     last_seen_posts = models.DateField(auto_now_add=True, null=False)
 
+    @classmethod
+    def Congrats(cls):
+        """
+        the method works as a crontab function
+        need to run at every 7 hours a day to send a congratulations to  people
+        logs the output according to loggin configs in settings.py
+        """
+        today_date = datetime.now()
+        for account in Account.objects.all():
+            if account.date_of_birth.day == today_date.day and account.date_of_birth.month == today_date.month:
+                send_email(user = account.user, template="happy_birthday.html")
+                logging.info("crontab : sending HBD email to ", account.user.email)
 
     @property
     def token(self):

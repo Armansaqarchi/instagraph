@@ -60,7 +60,7 @@ class OTPManager:
         secret = b32encode(OTPManager.generate_otp_key(user=user))
         otp = pyotp.TOTP(secret, interval=settings.ACTIVATION_TIMEOUT)
         act_code = otp.now()
-        send_email(act_code, user, subject = subject, template=template)
+        send_email({"activation" : act_code}, user, subject = subject, template=template)
 
     @staticmethod
     def verify_otp(user, otp, exc_message = "invalid_otp"):
@@ -144,7 +144,7 @@ class ProfileView(ModelViewSet):
             user.is_valid(raise_exception=True)
             user = user.save()
             if not settings.EMAIL_ACTIVATION:
-                return self.perform_activation(user=user)
+                return self.perform_activation(user=user, request=request)
             
             OTPManager.send_otp(user)
 

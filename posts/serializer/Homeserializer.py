@@ -50,7 +50,7 @@ class StorySerializer(serializers.ModelSerializer):
 class LikesSerializer(serializers.Serializer):
     """
     just a class for representing likes.
-    any Like object has so much difference than its representation
+    any Like object is different from its representation
     thus, the only application of this class is to represent the like object
     """
 

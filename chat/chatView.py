@@ -3,8 +3,10 @@ from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 from chat.models.messageModel import BaseMessage
 from rest_framework.response import Response
+from django.views import View
 from rest_framework.status import HTTP_200_OK
 from .chatSerializer import *
+from django.shortcuts import render
 from django.db.models import Q
 from exceptions.exceptions import *
 from rest_framework.generics import GenericAPIView
@@ -36,6 +38,10 @@ class GetMessages(APIView):
             BadRequestException(str(e))
         except ValueError:
             raise BadRequestException("page query parameter must be of type int", code = "value_format_error")
+        
+class ChatView(APIView):
+    def get(self, requset):
+        return render(request=requset, template_name="test_ws.html")
 
         
 class GetChatList(GenericAPIView):

@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
+from accounts import checks
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -229,6 +231,12 @@ LOGGING = {
             "filename" : "django.log",
             "level" : "INFO"
         }
+    },
+    "formatters": {
+        "verbose": {
+            "format": "{name} {levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
     }
 }
 
@@ -256,7 +264,7 @@ EMAIL_HOST_PASSWORD = env["EMAIL_HOST_PASSWORD"]
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 ACTIVATION_TIMEOUT = 1200 # 2 min
-EMAIL_ACTIVATION = True
+EMAIL_ACTIVATION = False
 
 LANGUAGE_CODE = 'en-us'
 

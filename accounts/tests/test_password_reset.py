@@ -11,7 +11,6 @@ class ResetPasswordTestCase(APITestCase):
             email = "arman.saghari81@gmail.com"
         )
 
-
     def test_reset_password(self) -> None:
         response = self.client.post("/accounts/profile/forgot_password", {"to_email": self.user1.email})
         self.assertEqual(response.status_code, 200)
