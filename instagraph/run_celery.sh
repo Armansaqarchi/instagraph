@@ -1,0 +1,1 @@
+celery instagraph worker --loglevel=info

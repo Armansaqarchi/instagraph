@@ -14,14 +14,11 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
-from accounts import checks
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 from dotenv import dotenv_values
-
 env = dotenv_values("instagraph/configs.env")
 
 # Quick-start development settings - unsuitable for production
@@ -30,6 +27,8 @@ env = dotenv_values("instagraph/configs.env")
 # SECURITY WARNING: keep the secret key used in production secret!
 
 SECRET_KEY = env["SECRET_KEY"]
+
+SITE_ID = 2
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -99,6 +98,11 @@ INSTALLED_APPS = [
     'channels',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 
@@ -111,11 +115,21 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': env["GOOGLE_CLIENT_ID"],
+            'secret': env["GOOGLE_CLIENT_SECRET"],
+        }
+    }
+}
 
 AUTHENTICATION_BACKENDS = [
-    "accounts.backends.CustomModelBackend"
+    "accounts.backends.CustomModelBackend",
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'instagraph.urls'
@@ -124,7 +138,7 @@ ROOT_URLCONF = 'instagraph.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "accounts", "templates")],
+        'DIRS': [os.path.join(BASE_DIR, 'templates/*')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -262,6 +276,9 @@ EMAIL_HOST_PASSWORD = env["EMAIL_HOST_PASSWORD"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 ACTIVATION_TIMEOUT = 1200 # 2 min
 EMAIL_ACTIVATION = False

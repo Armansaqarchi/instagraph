@@ -1,13 +1,17 @@
 import logging
+import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.tokens import default_token_generator
 from ..models import Account
+from urllib.parse import urlencode
 from ..permissions import *
 import pyotp
 import re
 from django.contrib.auth.models import User
 from time import time
+from typing import Any, Dict
+from rest_framework import serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.contrib.auth import login, authenticate
@@ -300,6 +304,93 @@ class ActivationCode(APIView):
         OTPManager.verify_otp(user=user, otp=request.data["otp"], exc_message=self.errors["activation_invalid"])
         return ProfileView.perform_activation(request=request, user=user)
 
+
+
+class GoogleLoginApi(APIView):
+    """
+    Google authentication class:
+    by default, when using MVC architecture, user is usually redirected to the google authentication page.
+    this redirection is assumed to be handled frontside and the server is responsible only for log in
+    the result of authentication is handled through response code, that is,
+    an error is retuned when authentication was failed or cancelled
+    after the code is returned, server must verify itself through the Oauth token.
+    @return:
+        user alongside the access token and refresh token
+    @throw:
+        Authentication cancelled when an error is returned
+    """
+
+    errors = {
+        "CANCELLED_ERROR" : "Login cancelled",
+    }
+
+
+    GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
+    GOOGLE_ACCESS_TOKEN_OBTAIN_URL = 'https://oauth2.googleapis.com/token'
+    GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
+
+
+
+    def dispatch(self, request, *args, **kwargs):
+        self.GOOGLE_OAUTH_CLIENT_ID = self.get_client_id()
+        self.GOOGLE_OAUTH_CLIENT_SECRET = self.get_client_secret()
+        return super().dispatch(request, *args, **kwargs)
+
+
+    class GoogleResSerializer(serializers.Serializer):
+        code = serializers.CharField(required= False)
+        error = serializers.CharField(required= False)
+
+    def get(self, request, *args, **kwargs):
+        result = self.GoogleResSerializer(request.GET)
+        result.is_valid(raise_exception=True)
+        validated_result = result.validated_data
+        code = validated_result["code"]
+        error = validated_result["error"]
+        if not code or error:
+            return Response({"error" : error})
+        
+        # now that we know the login is successfull, we could make the authentication things 
+        token = self.get_google_token()
+
+
+
+    def get_google_token(self, code: str, redirect_url: str) -> str:
+        data = {
+            "code": code,
+            "client_id": 
+            "client_secret",
+            'grant_type': 'authorization_code',
+            "redirect_uri": redirect_url
+        }
+        response = requests.get(self.GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
+        if response.status_code != 200:
+            return ValidationError("unable to get token from google")
+        return response.json()["access_token"]
+
+    def get_user_google_info(self, access_token : str) -> Dict[str, Any]:
+        data = {
+            "access_token" : access_token
+        }
+        response = requests.get(self.GOOGLE_USER_INFO_URL, data=data)
+        if response.status_code != 200:
+            raise ValidationError("something went wrong while obtaining new token from google")
+        return response.json()
+    
+    def get_client_id(self):
+        return settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["client_id"]
+
+    def get_client_secret(self):
+        return settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["secret"]
+
+
+
+
+
+            
+        
+
+        
 
 
 

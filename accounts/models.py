@@ -34,7 +34,7 @@ class Account(models.Model):
     last_seen_posts = models.DateField(auto_now_add=True, null=False)
 
     @classmethod
-    def Congrats(cls):
+    def congrats(cls):
         """
         the method works as a crontab function
         need to run at every 7 hours a day to send a congratulations to  people
@@ -77,10 +77,8 @@ class Account(models.Model):
     
     @property
     def chats(self):
-        ids = self.member1.values_list("thread", flat = True).union(self.member2.values_list("thread", flat = True))\
-            .union(self.groups.values_list("thread", flat = True))
-        
-
+        ids = self.member1.values_list("thread", flat = True).union(self.member2.values_list("thread", flat = True), \
+                                                                    self.groups.values_list("thread", flat = True))
         return Chat.objects.filter(thread__in = ids)
 
     
