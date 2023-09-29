@@ -14,6 +14,7 @@ from typing import Any, Dict
 from rest_framework import serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import login, authenticate
 from base64 import b32encode
 from posts.permissions import IsFollowerOrPublicPermission
@@ -320,6 +321,9 @@ class GoogleLoginApi(APIView):
         Authentication cancelled when an error is returned
     """
 
+
+    redirect_url = settings.BASE_URL + "google"
+
     errors = {
         "CANCELLED_ERROR" : "Login cancelled",
     }
@@ -351,10 +355,28 @@ class GoogleLoginApi(APIView):
             return Response({"error" : error})
         
         # now that we know the login is successfull, we could make the authentication things 
-        token = self.get_google_token()
+        token = self.get_google_token(code=code, redirect_url=self.redirect_url)
+        user_data = self.get_user_google_info(access_token=token)
+        try:
+            user = User.objects.get(email = user_data["email"])
+
+        except User.DoesNotExist:
+            # user must be created
+            user= User.objects.create_user(
+                username= user_data["email"],
+                first_name= user_data["given_name"],
+                lastname= user_data["lastname"],
+                email= user_data["email"]
+            )
+        access, refresh = self.get_pair_token(user.account.token)
+        return Response({
+            "user" : user,
+            "access" : access,
+            "refresh" : refresh
+        })
 
 
-
+        
     def get_google_token(self, code: str, redirect_url: str) -> str:
         data = {
             "code": code,
@@ -367,6 +389,7 @@ class GoogleLoginApi(APIView):
         if response.status_code != 200:
             return ValidationError("unable to get token from google")
         return response.json()["access_token"]
+    
 
     def get_user_google_info(self, access_token : str) -> Dict[str, Any]:
         data = {
@@ -382,6 +405,9 @@ class GoogleLoginApi(APIView):
 
     def get_client_secret(self):
         return settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["secret"]
+    
+    def get_pair_token(token):
+        return token.access, token
 
 
 

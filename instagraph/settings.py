@@ -30,6 +30,7 @@ SECRET_KEY = env["SECRET_KEY"]
 
 SITE_ID = 2
 
+BASE_URL = "localhost:8000/"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
