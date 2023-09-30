@@ -362,15 +362,17 @@ class GoogleLoginApi(APIView):
 
         except User.DoesNotExist:
             # user must be created
-            user= User.objects.create_user(
+            user= User(
                 username= user_data["email"],
                 first_name= user_data["given_name"],
-                lastname= user_data["lastname"],
+                last_name= user_data["family_name"],
                 email= user_data["email"]
             )
+            user.save()
+
         access, refresh = self.get_pair_token(user.account.token)
         return Response({
-            "user" : user,
+            "message": "login successful",
             "access" : access,
             "refresh" : refresh
         }, status=HTTP_200_OK)
@@ -386,7 +388,6 @@ class GoogleLoginApi(APIView):
         response = requests.post(self.GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
         if not response.ok:
             return ValidationError("unable to get token from google")
-        print(response.content)
         return response.json()["access_token"]
     
 
@@ -406,8 +407,8 @@ class GoogleLoginApi(APIView):
     def get_client_secret(self):
         return settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["secret"]
     
-    def get_pair_token(token):
-        return token.access, token
+    def get_pair_token(self, token):
+        return str(token.access_token), str(token)
 
 
 
