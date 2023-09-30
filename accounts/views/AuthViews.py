@@ -322,7 +322,7 @@ class GoogleLoginApi(APIView):
     """
 
 
-    redirect_url = settings.BASE_URL + "google"
+    redirect_url = "http://localhost:8000/accounts/google"
 
     errors = {
         "CANCELLED_ERROR" : "Login cancelled",
@@ -346,11 +346,11 @@ class GoogleLoginApi(APIView):
         error = serializers.CharField(required= False)
 
     def get(self, request, *args, **kwargs):
-        result = self.GoogleResSerializer(request.GET)
+        result = self.GoogleResSerializer(data= request.GET)
         result.is_valid(raise_exception=True)
         validated_result = result.validated_data
-        code = validated_result["code"]
-        error = validated_result["error"]
+        code = validated_result.get("code")
+        error = validated_result.get("error")
         if not code or error:
             return Response({"error" : error})
         
@@ -373,21 +373,20 @@ class GoogleLoginApi(APIView):
             "user" : user,
             "access" : access,
             "refresh" : refresh
-        })
+        }, status=HTTP_200_OK)
 
-
-        
     def get_google_token(self, code: str, redirect_url: str) -> str:
         data = {
-            "code": code,
-            "client_id": 
-            "client_secret",
-            'grant_type': 'authorization_code',
-            "redirect_uri": redirect_url
+            'code': code,
+            'client_id': self.get_client_id(),
+            'client_secret': self.get_client_secret(),
+            'redirect_uri': redirect_url,
+            'grant_type': 'authorization_code'
         }
-        response = requests.get(self.GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
-        if response.status_code != 200:
+        response = requests.post(self.GOOGLE_ACCESS_TOKEN_OBTAIN_URL, data=data)
+        if not response.ok:
             return ValidationError("unable to get token from google")
+        print(response.content)
         return response.json()["access_token"]
     
 
@@ -395,8 +394,9 @@ class GoogleLoginApi(APIView):
         data = {
             "access_token" : access_token
         }
-        response = requests.get(self.GOOGLE_USER_INFO_URL, data=data)
-        if response.status_code != 200:
+
+        response = requests.get(self.GOOGLE_USER_INFO_URL, params=data)
+        if not response.ok:
             raise ValidationError("something went wrong while obtaining new token from google")
         return response.json()
     

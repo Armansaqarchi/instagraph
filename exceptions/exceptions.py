@@ -18,7 +18,7 @@ def handle_exception(exc, context):
     elif isinstance(exc, InvalidToken):
         exc.detail = "Token is invalid or maybe expired"
 
-    print(exc)
+    print(type(exc))
 
     detail = getattr(exc, "detail", None)
     code = getattr(exc, "default_code", None)

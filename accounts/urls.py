@@ -6,7 +6,8 @@ from .views.AuthViews import (
     LoginView,
     ProfileView,
     ActivationCode,
-    PasswordResetAPIView
+    PasswordResetAPIView,
+    GoogleLoginApi
 )
 from .views.FollowViews import(
     FollowersAPIView,
@@ -31,6 +32,7 @@ urlpatterns = [
     re_path(r"^follower/(?P<pk>[\w+-]+)$", FollowersAPIView.as_view({"get" : "accept_or_reject", "delete" : "destroy"}), name="followers"),
     re_path(r"^following/followings", FollowingsListAPIView.as_view()),
     re_path(r"^following/(?P<pk>[\w+-]+)", FollowingsAPIView.as_view({"get" : "create", "delete" : "destroy"})),
+    re_path(r"^google", GoogleLoginApi.as_view())
     # re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FriendFollowRQ.as_view(), name= "follow_req"),
     # re_path(r"^accept_req/(?P<RQ_id>[\w+-]+)", AcceptRQ.as_view(), name="accept_req"),
     # re_path(r"^reqList/(?P<id>\d+)$", RQList.as_view(), name="req_list"),
