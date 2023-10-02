@@ -7,6 +7,8 @@ from exceptions.exceptions import *
 from django.db import transaction
 from ..models import Like
 from ..models import MediaPost
+from taggit.managers import TaggableManager
+from taggit.serializers import TagListSerializerField
 
 
 class PostSerializer(serializers.Serializer):
@@ -14,6 +16,8 @@ class PostSerializer(serializers.Serializer):
     description = serializers.CharField()
     location = serializers.CharField()
     user = serializers.IntegerField(required = True, min_value=0)
+    tags = TagListSerializerField()
+
 
     def validate_user(self, user):
         if not User.objects.filter(pk = user).exists():
@@ -25,7 +29,8 @@ class PostSerializer(serializers.Serializer):
         post = Post.objects.create(
             description = validated_data.get("description", ""),
             location = validated_data.get("location", ""),
-            user = validated_data.get("user")
+            user = validated_data.get("user"),
+            tags = validated_data.get("tags", None)
         )
         medias = validated_data.get("medias", None)
 
@@ -40,6 +45,17 @@ class PostSerializer(serializers.Serializer):
                 content_url = media,
                 page_num = page
             )
+    
+    def update(self, validated_data, instance):
+        instance.description = getattr(validated_data, "description", instance.description)
+        instance.location = getattr(validated_data, "location", instance.location)
+        if hasattr(validated_data, "tags"):
+            instance.tags.set(getattr(validated_data, "tags", instance.tags))
+        instance.save()
+        
+
+
+
             
 class StorySerializer(serializers.ModelSerializer):
     class Meta:

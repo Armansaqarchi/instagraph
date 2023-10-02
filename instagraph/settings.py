@@ -30,7 +30,6 @@ SECRET_KEY = env["SECRET_KEY"]
 
 SITE_ID = 2
 
-BASE_URL = "localhost:8000/"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -212,9 +211,7 @@ CACHES = {
 }
 DEFAULT_CACHE_TIMEOUT = 240
 
-CRONJOBS = [
-     ('*/1 * * * *', 'accounts.crons.activation_cron_job')
-]
+
 
 
 # Password validation

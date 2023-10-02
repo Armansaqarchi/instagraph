@@ -2,6 +2,8 @@ from django.db import models
 from uuid import uuid4
 from accounts.models import Account
 from django.conf import settings
+from taggit.managers import TaggableManager
+from django.utils.translation import gettext_lazy as _
 
 class Post(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
@@ -11,6 +13,7 @@ class Post(models.Model):
     comments = models.PositiveBigIntegerField(default = 0)
     created_at = models.DateTimeField(auto_now_add=True)
     location = models.CharField(max_length=50, null=True)
+    tags = TaggableManager(verbose_name="tags", help_text=_("used to tag the posts for search optimizations, filtering, ..."))
     class Meta:
         db_table = 'posts'
         ordering = ['created_at']

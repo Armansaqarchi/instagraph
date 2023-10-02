@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 
 
+
 #get a logger indicating this file 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class Account(models.Model):
     followers = models.PositiveBigIntegerField(default = 0)
     following = models.PositiveBigIntegerField(default = 0)
     last_seen_posts = models.DateField(auto_now_add=True, null=False)
+
 
     @classmethod
     def congrats(cls):
