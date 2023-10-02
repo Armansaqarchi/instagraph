@@ -4,7 +4,7 @@ from accounts.models import Account
 from django.conf import settings
 from taggit.managers import TaggableManager
 from django.utils.translation import gettext_lazy as _
-
+from taggit.models import GenericUUIDTaggedItemBase, TaggedItemBase
 class Post(models.Model):
     id = models.UUIDField(default = uuid4, null=False, primary_key=True, editable = False, unique=True)
     user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="user_posts")
@@ -57,3 +57,15 @@ class MediaPost(models.Model):
         unique_together = ('post_id', 'page_num')
         ordering = ['posted_at']
         db_table = "media_post"
+
+
+class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+    """
+    this is the desired class, specially for tagging models having UUID fields
+    TaggedItemBase: this class implements a foreign key to the Tag model.
+    the reason behind this is for optimizations.
+    using this schema, we will be able to get the related objects and items efficiently, 
+    rather than giving all the tagged models a related name tag
+    """
+    class Meta:
+        verbose_name = _("tags for uuid models")
