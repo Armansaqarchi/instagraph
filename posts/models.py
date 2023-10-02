@@ -13,7 +13,8 @@ class Post(models.Model):
     comments = models.PositiveBigIntegerField(default = 0)
     created_at = models.DateTimeField(auto_now_add=True)
     location = models.CharField(max_length=50, null=True)
-    tags = TaggableManager(verbose_name="tags", help_text=_("used to tag the posts for search optimizations, filtering, ..."))
+    tags = TaggableManager(verbose_name="tags", help_text=_("used to tag the posts for search optimizations, filtering, ..."),
+                            through='posts.UUIDBasedTag')
     class Meta:
         db_table = 'posts'
         ordering = ['created_at']
@@ -59,7 +60,7 @@ class MediaPost(models.Model):
         db_table = "media_post"
 
 
-class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+class UUIDBasedTag(GenericUUIDTaggedItemBase, TaggedItemBase):
     """
     this is the desired class, specially for tagging models having UUID fields
     TaggedItemBase: this class implements a foreign key to the Tag model.
@@ -68,4 +69,5 @@ class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
     rather than giving all the tagged models a related name tag
     """
     class Meta:
-        verbose_name = _("tags for uuid models")
+        verbose_name = _("posts_tags")
+        db_table = "posts_tags"

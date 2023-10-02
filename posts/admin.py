@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Comment, Post, Like, MediaPost
+from .models import Comment, Post, Like, MediaPost, UUIDBasedTag
 # Register your models here.
 
 
@@ -7,4 +7,5 @@ from .models import Comment, Post, Like, MediaPost
 admin.site.register(Comment)
 admin.site.register(Post)
 admin.site.register(Like)
+admin.site.register(UUIDBasedTag)
 admin.site.register(MediaPost)
