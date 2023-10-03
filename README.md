@@ -144,6 +144,13 @@ ACTIVATION_TIMEOUT = 1200 # defualt time out to verify email account
 EMAIL_ACTIVATION = False # whether enable activation with email otp
 ```
 
+> Celery
+
+to instantiate a celery for you application, you can simply run the ./run_celery.sh file.
+**note that you must run the file inside the root directory to work**:
+```md
+instagraph/run_celery.sh
+```
 
 
 
