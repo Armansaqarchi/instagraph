@@ -17,7 +17,7 @@ def handle_exception(exc, context):
         exc.detail = "failed to Authenticate user"
     elif isinstance(exc, InvalidToken):
         exc.detail = "Token is invalid or maybe expired"
-
+    print(type)
 
 
     detail = getattr(exc, "detail", None)

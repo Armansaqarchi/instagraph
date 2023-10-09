@@ -107,7 +107,6 @@ class LoginView(APIView):
             return Response({"Message" : f"Activation Code has been sent to {user.email}",\
                           "Status" : "Success", "Code" : "activation_code"}, status=HTTP_200_OK)
 
-
 class ProfileView(ModelViewSet):
 
     PERMISSION_CASES = {

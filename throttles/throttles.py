@@ -20,11 +20,11 @@ class LoginThrottle(SimpleRateThrottle):
         to the google recaptcha verification server.
         on a successfull action, the google returns a json response having an attribute 'success', indicating if the token is valid.
     """
-    scope = "LoginAttemptRate"
+    scope = "loginAttemptRate"
 
     def get_cache_key(self, request, view):
         try:
-            user = User.objects.get(request.data.get("email"))
+            user = User.objects.get(username= request.data.get("username"))
         except User.DoesNotExist:
             user = None
         ident = user.pk if user else self.get_ident()
@@ -35,7 +35,7 @@ class LoginThrottle(SimpleRateThrottle):
 
     def allow_request(self, request, view):
         allow = super().allow_request(request, view)
-        if allow:
+        if allow == True:
             return True
         if self.check_captcha(request=request):
             return True
@@ -55,7 +55,7 @@ class LoginThrottle(SimpleRateThrottle):
         
 
     def check_captcha(self, request):
-        g_value = self.request.data.get("recaptcha")
+        g_value = request.data.get("recaptcha", None)
         if g_value:
             return self.verify_captcha(g_value)
         return False
