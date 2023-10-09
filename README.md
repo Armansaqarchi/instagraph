@@ -35,18 +35,8 @@ while its wide types of queries could lead to making complex queries much easier
 </div>
 
 
-### Built With
-<table style="border-collapse: separate;"> 
-  <tr>
-    <td >
-      <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white"/>
-    </td>
-    <td>
-      <img src="https://img.shields.io/badge/daphne-092E20?style=for-the-badge&logo=django&logoColor=green"/>
-    </td>
-    <td>
-      <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green"/>
-    </td>
-    
-  </tr>
-</table>
+<p align="center">
+  <img src="image1.jpg" width="200" />
+  <img src="image2.jpg" width="200" />
+  <img src="image3.jpg" width="200" />
+</p>

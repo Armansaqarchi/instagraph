@@ -78,6 +78,7 @@ class OTPManager:
             raise UnauthorizedException(exc_message, code="invalid_code")
 
 class LoginView(APIView):
+
     
     def post(self, request) -> Response:
         if request.user.is_authenticated:

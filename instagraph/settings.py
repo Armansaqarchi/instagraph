@@ -104,7 +104,22 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'taggit'
+    "rest_framework_recaptcha"
 ]
+
+REST_CAPTCHA = {
+    'CAPTCHA_CACHE': 'default',
+    'CAPTCHA_TIMEOUT': 300,  # 5 minutes
+    'CAPTCHA_LENGTH': 4,
+    'CAPTCHA_FONT_SIZE': 22,
+    'CAPTCHA_IMAGE_SIZE': (90, 40),
+    'CAPTCHA_LETTER_ROTATION': (-35, 35),
+    'CAPTCHA_FOREGROUND_COLOR': '#001100',
+    'CAPTCHA_BACKGROUND_COLOR': '#ffffff',
+    'CAPTCHA_CACHE_KEY': 'rest_captcha_{key}.{version}',
+    'FILTER_FUNCTION': 'rest_captcha.captcha.filter_default',
+    'NOISE_FUNCTION': 'rest_captcha.captcha.noise_default'
+}
 
 
 
@@ -261,7 +276,15 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
-    "EXCEPTION_HANDLER" : "exceptions.exceptions.handle_exception"
+    "EXCEPTION_HANDLER" : "exceptions.exceptions.handle_exception",
+    'DEFAULT_THROTTLE_CLASS' : [
+        "rest_framework.throttling.ScopedRateThrottle"
+    ],
+    'DEFAULT_THROTTLE_RATES' : {
+        "uploads" : "15/day",
+        "user" : "30/day",
+        "Anon" : "20/day"
+    }
 }
 
 
@@ -272,6 +295,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'arman.saqarchi@gmail.com'
 EMAIL_HOST_PASSWORD = env["EMAIL_HOST_PASSWORD"]
+
+GOOGLE_RECAPTCHA_SITE = env["RECAPTCHA_SITE_KEY"]
+GOOGLE_RECAPTCHA_SECRET = env["RECAPTCHA_SECRET_KEY"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
