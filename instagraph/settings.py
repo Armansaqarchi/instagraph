@@ -103,7 +103,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'taggit'
+    'taggit',
     "rest_framework_recaptcha"
 ]
 
