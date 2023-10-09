@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import re_path
+from django.urls import re_path, path
 from django.urls import include
 
 from rest_framework_simplejwt.views import(
@@ -37,6 +37,7 @@ urlpatterns = [
     re_path(r'accounts/', include('accounts.urls')),
     re_path(r'chats/', include('chat.urls')),
     re_path(r'auth/', include('allauth.urls')),
+    path(r'api/captcha/', include('rest_captcha.urls'))
 ]
 
 

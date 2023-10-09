@@ -17,6 +17,7 @@ while its wide types of queries could lead to making complex queries much easier
 </div>
 
 
+<<<<<<< HEAD
 ### Built With
 <div>
   <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white"/>
@@ -151,6 +152,5 @@ to instantiate a celery for you application, you can simply run the ./run_celery
 ```md
 instagraph/run_celery.sh
 ```
-
 
 
