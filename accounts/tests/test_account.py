@@ -2,6 +2,8 @@ from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from ..models import Follows
 from posts.models import Post
+from selenium import webdriver
+
 
 class AccountTestCase(APITestCase):
 
@@ -62,5 +64,3 @@ class AccountTestCase(APITestCase):
         posts = self.user5.account.user_posts.all()
         self.assertEqual(2, len(posts))
         
-
-

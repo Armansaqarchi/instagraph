@@ -69,7 +69,6 @@ class ForibiddenException(APIException):
         self.default_code = code
         super().__init__(message, "403 FORBIDDEN")
 
-
 class PasswordIsEqualException(APIException):
 
     status_code = 409
@@ -78,3 +77,5 @@ class PasswordIsEqualException(APIException):
         self.default_code = code
         super().__init__(message, "409 CONFLICT")
 
+class InvalidCaptchaException(BadRequestException):
+    pass

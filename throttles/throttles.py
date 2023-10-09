@@ -2,6 +2,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from django.contrib.auth.models import User
 from django.conf import settings
 import requests
+from exceptions.exceptions import *
 
 class LoginThrottle(SimpleRateThrottle):
     """
@@ -43,19 +44,22 @@ class LoginThrottle(SimpleRateThrottle):
     
     @staticmethod
     def verify_captcha(g_value):
+
         verify_api = "https://www.google.com/recaptcha/api/siteverify"
         credentials = {
             "response" : g_value,
             "secret" : settings.GOOGLE_RECAPTCHA_SECRET
         }
-        response = requests.post(verify_api, data=credentials)
+        response = requests.post(verify_api, data=credentials).json()
         if response.get("success") == True:
             return True
-        return False
+        raise InvalidCaptchaException("Invalid captcha token")
         
 
     def check_captcha(self, request):
-        g_value = request.data.get("recaptcha", None)
-        if g_value:
-            return self.verify_captcha(g_value)
+        g_value = request.data.get("recaptcha", "")
+        
+        if len(g_value) != 0:
+            return LoginThrottle.verify_captcha(g_value)
+
         return False
