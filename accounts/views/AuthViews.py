@@ -44,7 +44,7 @@ from rest_framework.status import(
 
 
 from exceptions.exceptions import *
-
+from throttles.throttles import LoginThrottle
 logger = logging.getLogger(__name__)
 
 
@@ -78,7 +78,7 @@ class OTPManager:
             raise UnauthorizedException(exc_message, code="invalid_code")
 
 class LoginView(APIView):
-
+    throttle_classes = (LoginThrottle,)
     
     def post(self, request) -> Response:
         if request.user.is_authenticated:
