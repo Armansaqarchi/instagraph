@@ -393,7 +393,6 @@ class GoogleLoginApi(APIView):
         data = {
             "access_token" : access_token
         }
-
         response = requests.get(self.GOOGLE_USER_INFO_URL, params=data)
         if not response.ok:
             raise ValidationError("something went wrong while obtaining new token from google")
