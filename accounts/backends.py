@@ -10,4 +10,5 @@ class CustomModelBackend(ModelBackend):
     """
 
     def user_can_authenticate(self, user) -> bool:
+        return super().user_can_authenticate
         return True

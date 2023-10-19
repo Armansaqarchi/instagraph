@@ -1,24 +1,15 @@
-from typing import Any
-from django import http
-from django.http.response import HttpResponse
-from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import ListAPIView
 from ..api.serializer import (
     FollowingSerializer,
     FollowerSerializer
 )
-from django.forms import Form
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
-from django.core.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
-from django.db import IntegrityError
 from django.db.models import Q
 from ..models import Follows, FollowRQ
 from ..permissions import *
-from rest_framework.views import APIView
 from ..models import Account
 from rest_framework.response import Response
 import logging

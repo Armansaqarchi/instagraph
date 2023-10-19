@@ -225,11 +225,9 @@ class PasswordResetAPIView(ViewSet):
     }
 
     def get_user(self, **kwargs):
-
         user = User.objects.filter(**kwargs).first()
         if not user:
             raise NotFoundException(f"No such user found")
-
         return user
          
 
