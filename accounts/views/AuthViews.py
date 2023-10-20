@@ -14,7 +14,8 @@ from typing import Any, Dict
 from rest_framework import serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import login, authenticate
 from base64 import b32encode
 from posts.permissions import IsFollowerOrPublicPermission
@@ -80,6 +81,7 @@ class OTPManager:
 class LoginView(APIView):
     throttle_classes = (LoginThrottle,)
     
+    @method_decorator(sensitive_post_parameters("password"))
     def post(self, request) -> Response:
         if request.user.is_authenticated:
             raise AlreadyExistsException("user have already authenticated", code= "already_authenticated")
