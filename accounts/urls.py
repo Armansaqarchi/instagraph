@@ -2,6 +2,8 @@ from django.urls import re_path, path
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
+from accounts.graphql.schema import schema
+from accounts.graphql.graphql import GraphAuthorizedView
 from .views.AuthViews import (
     LoginView,
     ProfileView,
@@ -32,10 +34,8 @@ urlpatterns = [
     re_path(r"^follower/(?P<pk>[\w+-]+)$", FollowersAPIView.as_view({"get" : "accept_or_reject", "delete" : "destroy"}), name="followers"),
     re_path(r"^following/followings", FollowingsListAPIView.as_view()),
     re_path(r"^following/(?P<pk>[\w+-]+)", FollowingsAPIView.as_view({"get" : "create", "delete" : "destroy"})),
-    re_path(r"^google", GoogleLoginApi.as_view())
-    # re_path(r"^follow_req/(?P<following_id>[0-9]+)$", FriendFollowRQ.as_view(), name= "follow_req"),
-    # re_path(r"^accept_req/(?P<RQ_id>[\w+-]+)", AcceptRQ.as_view(), name="accept_req"),
-    # re_path(r"^reqList/(?P<id>\d+)$", RQList.as_view(), name="req_list"),
+    re_path(r"^google", GoogleLoginApi.as_view()),
+    path("graphql", GraphAuthorizedView.as_view(graphiql = True, schema = schema))
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

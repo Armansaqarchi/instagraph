@@ -79,9 +79,9 @@ class OTPManager:
             raise UnauthorizedException(exc_message, code="invalid_code")
 
 class LoginView(APIView):
-    throttle_classes = (LoginThrottle,)
+    # uncomment this for production mode
+    # throttle_classes = (LoginThrottle,)
     
-    @method_decorator(sensitive_post_parameters("password"))
     def post(self, request) -> Response:
         if request.user.is_authenticated:
             raise AlreadyExistsException("user have already authenticated", code= "already_authenticated")
@@ -95,7 +95,7 @@ class LoginView(APIView):
 
         if not user:
             raise UnauthorizedException("Username or password may be incorrect", "incorrect_credentials")
-        
+
         if user.is_active:
             login(request=request, user=user)
             message = "successfully logged in"
@@ -105,7 +105,6 @@ class LoginView(APIView):
                              "access" : str(referesh_token.access_token)}}, HTTP_200_OK)
         else:
             OTPManager.send_otp(user = user)
-
             return Response({"Message" : f"Activation Code has been sent to {user.email}",\
                           "Status" : "Success", "Code" : "activation_code"}, status=HTTP_200_OK)
 

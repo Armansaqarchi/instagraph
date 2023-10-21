@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'taggit',
+    "graphene_django",
     "rest_framework_recaptcha"
 ]
 
