@@ -62,7 +62,6 @@ class PostViewAPI(ModelViewSet):
 
         return Response({"data" : page_posts_serialized, "Message" : "posts are ready to show", "Code" : "posts_fetched", "Status" : "success"},
                         status=HTTP_200_OK)
-    
 
     def partial_update(self, request, pk):
         response = super().partial_update()

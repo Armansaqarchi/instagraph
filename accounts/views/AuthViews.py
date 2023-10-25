@@ -55,7 +55,6 @@ class OTPManager:
         """
         secret key generator based on user details
         """
-
         return f"{settings.SECRET_KEY}{user.email}{user.username}".encode()
 
     @staticmethod
@@ -170,11 +169,9 @@ class ProfileView(ModelViewSet):
 
     @staticmethod
     def perform_activation(user, request):
-
         user.is_active = True
         login(request=request, user=user)
         token = user.account.token
-        
         return Response({"Status" : "success", "Message" : "user created", "Code" : "user_created",
                         "Token" : {"refresh" : str(token), "access" : str(token.access_token)}},
                             HTTP_201_CREATED)

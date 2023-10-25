@@ -9,7 +9,7 @@ class TokenMiddleware:
     def verify_token(header):
         token_settings = settings.SIMPLE_JWT
         try:
-            token_type, raw_token = header.get("Authorization").split()
+            token_type, raw_token = header.get("HTTP_AUTHORIZATION").split()
         except AttributeError as e:
             raise PermissionDenied("Failed to authenticated the user", code= "unable_to_authenticated")
         if token_type != "Bearer":

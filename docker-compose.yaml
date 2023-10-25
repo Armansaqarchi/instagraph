@@ -5,8 +5,25 @@ services:
     ports:
       - 7000:6379
   backend:
-    image: armans8118/instagraph:latest
+    build: 
+      context: .
+      dockerfile: .
     ports:
       - 8000:8000
     volumes:
-      - ./django:/app
+      - static_volumes:/django/static
+  nginx:
+    build: 
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - static_volumes:/etc/nginx/static
+
+volumes:
+  # represents the data which is shared between the nginx server and the wsgi django server
+  static_volumes:
+  
+
+

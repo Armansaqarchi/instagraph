@@ -12,7 +12,7 @@ class GraphAuthorizedView(GraphQLView):
 
 
     def dispatch(self, request, *args, **kwargs):
-        user_id = TokenMiddleware.verify_token(request.header)
+        user_id = TokenMiddleware.verify_token(request.META)
         if not user_id:
             raise UnauthorizedException("unable to authoriza user")
         

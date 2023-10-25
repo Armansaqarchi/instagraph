@@ -1,7 +1,8 @@
 FROM python:3.12.0b4-alpine3.18
 
-COPY . ./django-instagraph
+COPY . /django
 
+WORKDIR /django
 
 RUN pip install --upgrade pip
 
@@ -19,13 +20,13 @@ RUN apk update \
 
 RUN pip install -U setuptools
 
-RUN pip install -r /django-instagraph/requirements.txt
+RUN pip install -r /requirements.txt
 
 
 EXPOSE 8000
 
-RUN python ./django-instagraph/manage.py migrate
+RUN python ./manage.py migrate
 
-CMD ["python", "./django-instagraph/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 

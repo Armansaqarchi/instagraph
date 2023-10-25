@@ -82,8 +82,11 @@ class Account(models.Model):
         ids = self.member1.values_list("thread", flat = True).union(self.member2.values_list("thread", flat = True), \
                                                                     self.groups.values_list("thread", flat = True))
         return Chat.objects.filter(thread__in = ids)
-
     
+    def profile_image_url(self, host_url):
+        if not hasattr(self, "mediaprofile"):
+            return None
+        return host_url + "/" + settings.MEDIA_ROOT + "/" +  str(self.mediaprofile.id)
 
     def update(self, **kwargs):
         for key, value in kwargs.items():

@@ -97,12 +97,8 @@ class ChatRoomMiddleware(BaseMiddleware):
         looks for thread id and gets the chat
         this class is also responsible to check permissions required to access the chat
         """
-
-    
         thread = scope["query_params"].get("thread", None)
         await self.set_chat(thread=thread, scope = scope)
-
-
         return await self.app(scope, receive, send)
     
 
