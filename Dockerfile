@@ -20,7 +20,7 @@ RUN apk update \
 
 RUN pip install -U setuptools
 
-RUN pip install -r /requirements.txt
+RUN pip install -r ./requirements.txt
 
 
 EXPOSE 8000
