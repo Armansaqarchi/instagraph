@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import re_path, path
 from django.urls import include
+from django.contrib.staticfiles import views
 
 from rest_framework_simplejwt.views import(
     TokenObtainPairView,
@@ -37,7 +38,7 @@ urlpatterns = [
     re_path(r'accounts/', include('accounts.urls')),
     re_path(r'chats/', include('chat.urls')),
     re_path(r'auth/', include('allauth.urls')),
-    path(r'api/captcha/', include('rest_captcha.urls'))
+    path(r'api/captcha/', include('rest_captcha.urls')),
 ]
 
 

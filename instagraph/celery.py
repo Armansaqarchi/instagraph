@@ -17,13 +17,6 @@ app.conf.task_routes = [
     ("queue2", "queue2.*"),
 ]
 
-app.conf.task_routes = (
-    {"instagraph.celery_test.func" : {
-        "queue" : "queue1",
-        }
-    }
-)
-
 
 #settings crontab
 app.conf.beat_schedule = {

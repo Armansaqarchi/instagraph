@@ -1,12 +1,42 @@
 version: "3.8"
 services:
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - 5430:5432
+    volumes:
+      - ~/apps/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=test123123
+      - POSTGRES_USER=mahan
+      - POSTGRES_DB=postgres
   redis:
     image: redis:6.0.9-alpine
     ports:
       - 7000:6379
   backend:
-    image: armans8118/instagraph:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports:
       - 8000:8000
     volumes:
-      - ./django:/app
+      - static_volumes:/django/static
+    depends_on:
+      - postgres
+  nginx:
+    build: 
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - static_volumes:/etc/nginx/static
+
+
+volumes:
+  # represents the data which is shared between the nginx server and the wsgi django server
+  static_volumes:
+  
+
+

@@ -1,3 +1,5 @@
 #sensitive configurations
 instagraph/configs.env
 static
+venv
+

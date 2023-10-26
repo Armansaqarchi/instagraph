@@ -26,7 +26,7 @@ class StoryPagination(PageNumberPagination):
 
 
 class HomeView(ListAPIView):
-    permission_classes = [IsOwnerPermission, IsAuthenticated]
+    permission_classes = [IsOwnerPermission]
     login_url = settings.LOGIN_URL
     
 
@@ -56,12 +56,9 @@ class HomeView(ListAPIView):
 
 
     def get(self, request):
-
         self.set_type(request=request)
-
         account = request.user.account
         following_set = account.follower_set.only("following")
-
         if self.pagination_class == PostPagination:
             items = self.get_posts(request, followings=following_set)
         else:
@@ -69,11 +66,9 @@ class HomeView(ListAPIView):
         items = self.paginate_queryset(items)
 
         serialized = self.serializer_class(items, many=True).data
-
         last_seen_post = account.last_seen_posts
         account.last_seen_posts = datetime.now()
         account.save() 
-
         return Response({"data" : serialized, "status" : "success", "last_seen" : last_seen_post}, status=HTTP_200_OK)
     
 

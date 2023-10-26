@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'taggit',
+    "graphene_django",
     "rest_framework_recaptcha"
 ]
 
@@ -201,7 +202,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'USER' : 'mahan',
         'PASSWORD' : 'test123123',
-        "HOST" : "localhost",
+        "HOST" : "postgres",
         "PORT" : "5432",
         "NAME" : "postgres"
     }
